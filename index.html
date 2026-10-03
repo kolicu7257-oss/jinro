@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>진로설계 도우미</title>
+<style>
+:root{
+  --bg:#EDF1EF; --paper:#FFFFFF; --ink:#16302A; --sub:#5A6B66; --line:#D3DCD8;
+  --accent:#0F5C4E; --accent2:#0B4A3F; --soft:#E4EFEB; --sun:#F2B33D; --sunsoft:#FFF4DC;
+  --warn:#A45A00; --warnsoft:#FBF0DE; --star:#D08F00
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans KR",sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;word-break:keep-all}
+.shell{max-width:780px;margin:0 auto;padding:22px 20px 48px}
+/* 진행 경로: 실제 단계 순서이므로 정거장 형태로 표시 */
+.route{display:flex;align-items:flex-start;margin:4px 6px 22px;padding:0;list-style:none}
+.route li{flex:1;position:relative;text-align:center;font-size:13.5px;color:var(--sub)}
+.route li::before{content:"";position:absolute;top:10px;left:-50%;width:100%;height:3px;background:var(--line);z-index:0}
+.route li:first-child::before{display:none}
+.route li.done::before,.route li.now::before{background:var(--accent)}
+.route .dot{position:relative;z-index:1;display:block;width:23px;height:23px;margin:0 auto 6px;border-radius:50%;background:var(--paper);border:3px solid var(--line)}
+.route li.done .dot{background:var(--accent);border-color:var(--accent)}
+.route li.done .dot::after{content:"";position:absolute;left:5px;top:2px;width:5px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.route li.now{color:var(--ink);font-weight:700}
+.route li.now .dot{border-color:var(--accent);background:var(--sun);box-shadow:0 0 0 5px rgba(242,179,61,.28)}
+.card{background:var(--paper);border-radius:14px;padding:30px 34px 26px;box-shadow:0 1px 0 var(--line),0 10px 30px -18px rgba(15,60,50,.35)}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.step{margin:0;color:var(--accent);font-size:14.5px;font-weight:700}
+.homebtn{font:inherit;font-size:14.5px;padding:7px 14px 7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--sub);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.homebtn::before{content:"⟲";font-size:15px;line-height:1}
+.homebtn:hover{border-color:var(--accent);color:var(--accent)}
+h1{font-size:27px;line-height:1.35;margin:0 0 8px;letter-spacing:-.6px;font-weight:800}
+.lead{color:var(--sub);margin:0 0 22px;font-size:16px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opts.one{grid-template-columns:1fr}
+.opts.three{grid-template-columns:repeat(3,1fr)}
+.opt{font:inherit;text-align:left;background:var(--paper);border:1.5px solid var(--line);border-radius:10px;padding:15px 48px 15px 18px;min-height:66px;cursor:pointer;color:var(--ink);position:relative;transition:border-color .12s,background .12s}
+.opts.three .opt{min-height:54px;padding:12px 10px;text-align:center}
+.opt b{display:block;font-size:18px;font-weight:700;line-height:1.4}
+.opt small{display:block;color:var(--sub);font-size:14px;margin-top:3px;line-height:1.45}
+.opt small.w{color:var(--warn);font-weight:600}
+.opt:hover{border-color:var(--accent)}
+.opt::after{content:"";position:absolute;right:16px;top:50%;width:20px;height:20px;margin-top:-10px;border:2px solid var(--line);border-radius:50%;background:var(--paper)}
+.opts.multi .opt::after{border-radius:5px}
+.opts.three .opt::after{display:none}
+.opt.on{border-color:var(--accent);background:var(--soft)}
+.opt.on::after{border-color:var(--accent);background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3.2 3L15 7' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+.opts.three .opt.on{background:var(--accent);color:#fff}
+.opt.rec b::after{content:"추천";display:inline-block;margin-left:8px;vertical-align:2px;font-size:12px;font-weight:700;color:#5A3D00;background:var(--sun);padding:1px 8px;border-radius:999px}
+.opt:focus-visible,.nav button:focus-visible,.homebtn:focus-visible,input:focus{outline:3px solid var(--sun);outline-offset:2px}
+.grp{grid-column:1/-1;margin:14px 0 0;font-weight:800;color:var(--accent);font-size:15px;display:flex;align-items:center;gap:10px}
+.grp::after{content:"";flex:1;height:1px;background:var(--line)}
+.grp:first-child{margin-top:0}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:0 7px;border-radius:9px;border:1px solid var(--accent);color:var(--accent);margin-left:5px;vertical-align:1px}
+.tag.p{border-color:var(--warn);color:var(--warn)}
+.stars{color:var(--star);letter-spacing:1px}
+.note{background:var(--warnsoft);border-left:4px solid var(--warn);border-radius:0 8px 8px 0;padding:12px 14px;margin:18px 0 0;font-size:15px;color:#5a3900}
+input[type=text],input[type=password]{width:100%;font:inherit;font-size:18px;padding:14px 16px;border:1.5px solid var(--line);border-radius:10px}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+.nav button{font:inherit;font-size:16.5px;padding:12px 22px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--sub);cursor:pointer;min-width:96px}
+.nav button:hover{border-color:var(--accent);color:var(--accent)}
+.nav .go{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;min-width:132px}
+.nav .go:hover{background:var(--accent2);color:#fff}
+.nav button:disabled{background:var(--line);border-color:var(--line);color:#fff;cursor:default}
+.hero{text-align:center;padding:34px 0 18px}
+.hero .mark{width:72px;height:72px;margin:0 auto 18px;border-radius:50%;background:var(--soft);display:grid;place-items:center}
+.hero h1{font-size:34px;margin-bottom:12px}
+.hero .lead{font-size:17.5px}
+.hero .go{font:inherit;font-size:19px;font-weight:700;background:var(--accent);color:#fff;border:0;border-radius:12px;padding:17px 52px;margin-top:6px;cursor:pointer}
+.hero .go:hover{background:var(--accent2)}
+.hero .go:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+.offline{display:inline-block;margin-top:18px;font-size:13.5px;color:var(--sub)}
+.hbars{margin:6px 0 12px}
+.hb{display:grid;grid-template-columns:64px 1fr 36px;align-items:center;gap:10px;margin:4px 0}
+.hb .bar{height:12px;background:var(--soft);border-radius:6px;overflow:hidden}
+.hb .bar i{display:block;height:100%;background:var(--accent);border-radius:6px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hb b{font-weight:600;font-size:13.5px}
+.holcard{background:var(--soft);border-radius:10px;padding:16px 18px;margin-bottom:6px}
+.holcard .hb .bar{background:#fff}
+.modal{position:fixed;inset:0;background:rgba(15,40,34,.45);display:grid;place-items:center;padding:20px;z-index:50}
+.modal .box{background:var(--paper);border-radius:14px;padding:26px 28px 22px;max-width:420px;width:100%}
+.modal h2{margin:0 0 6px;font-size:21px}
+.modal p{margin:0;color:var(--sub)}
+.modal .nav{margin-top:20px;padding-top:16px}
+.adminlink{display:block;margin:6px 0 0 auto;font:inherit;font-size:13px;color:var(--sub);background:none;border:0;cursor:pointer;opacity:.6}
+.adminlink:hover{opacity:1;text-decoration:underline}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:4px 0 20px}
+.kpis div{background:var(--soft);border-radius:10px;padding:14px 16px}
+.kpis b{display:block;font-size:24px;font-weight:800;color:var(--accent);line-height:1.2}
+.kpis span{font-size:13.5px;color:var(--sub)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:14px 26px}
+.stat h4{margin:0 0 6px;font-size:15px}
+.hb.wide{grid-template-columns:minmax(90px,52%) 1fr 30px;font-size:13.5px}
+.hb.wide span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+.admin-actions button{font:inherit;font-size:15px;padding:10px 16px;border-radius:10px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+.admin-actions .go{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.admin-actions button:disabled{opacity:.4;cursor:default}
+button.danger{color:#A3261B!important;border-color:#E6B8B2!important}
+.modal button.go.danger{background:#A3261B;border-color:#A3261B;color:#fff!important}
+.switch{display:inline-flex;align-items:center;gap:6px;font-size:15px;padding:0 6px}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+@media (max-width:600px){.stats{grid-template-columns:1fr}.kpis b{font-size:19px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* 결과지 */
+.sheet{background:#fff;border:1px solid var(--line);padding:40px 44px;font-size:13.5px;margin-top:16px}
+.r-title{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:14px}
+.r-title h2{margin:0;font-size:21px}
+.r-title small{color:var(--sub)}
+table.info{width:100%;border-collapse:collapse;margin-bottom:12px}
+table.info th,table.info td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+table.info th{background:var(--soft);width:18%;font-weight:600}
+.r-sec{margin:14px 0}
+.r-sec h3{font-size:15.5px;margin:0 0 6px;padding-left:8px;border-left:4px solid var(--accent);break-after:avoid}
+.r-sec h4{font-size:14px;margin:10px 0 4px;break-after:avoid}
+.r-sec ul,.r-sec ol{margin:4px 0;padding-left:20px}
+.cert{border:1px solid var(--line);border-radius:4px;padding:8px 10px;margin:6px 0;break-inside:avoid}
+.cert .top{display:flex;justify-content:space-between;gap:10px}
+.cert dl{display:grid;grid-template-columns:44px 1fr;gap:2px 8px;margin:6px 0 0}
+.cert dt{color:var(--sub)}
+.cert dd{margin:0}
+.cert dl.wide{grid-template-columns:86px 1fr}
+.role{margin:4px 0;padding-left:20px}
+.role li{margin:4px 0;break-inside:avoid}
+.warnbox{background:var(--warnsoft);border-left:4px solid var(--warn);padding:7px 10px;margin:8px 0;color:#5a3900;break-inside:avoid}
+.foot{margin-top:16px;padding-top:8px;border-top:1px solid var(--line);font-size:11.5px;color:var(--sub)}
+@media (max-width:600px){.opts{grid-template-columns:1fr}.opts.three{grid-template-columns:1fr 1fr}.card{padding:22px 18px}.sheet{padding:22px 16px}h1{font-size:23px}.route li{font-size:11.5px}}
+/* 결과지 가독성: 글자 크기·줄 간격·대비를 키움 */
+.sheet{font-size:15.5px;line-height:1.75;color:#13241F}
+.sheet small{font-size:.9em;color:#3F4F4A;line-height:1.6}
+.r-title h2{font-size:24px}
+.r-sec{margin:22px 0}
+.r-sec h3{font-size:18px;margin:0 0 10px;padding:2px 0 2px 10px;border-left-width:5px}
+.r-sec h4{font-size:16px;margin:16px 0 6px}
+.r-sec p{margin:6px 0}
+.r-sec li{margin:3px 0}
+table.info th,table.info td{padding:8px 11px}
+.cert{padding:11px 14px;margin:8px 0}
+.cert dl{gap:4px 10px}
+.cert dt{color:#3F4F4A;font-weight:600}
+.cert dl.wide{grid-template-columns:100px 1fr}
+.warnbox{padding:9px 12px}
+.hb b{font-size:15px}
+.foot{font-size:13px;color:#3F4F4A;line-height:1.6}
+@media print{
+  @page{size:A4;margin:14mm 13mm}
+  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .no-print{display:none!important}
+  .shell{max-width:none;padding:0}
+  .card{border:0;padding:0;box-shadow:none;border-radius:0}
+  .sheet{border:0;padding:0;margin:0;font-size:11.5pt;line-height:1.6}
+  .r-sec h3{font-size:13.5pt}
+  .r-sec h4{font-size:12pt}
+  .sheet small,.foot{font-size:10pt}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <ol class="route no-print" id="route"></ol>
+  <div class="card" id="app"></div>
+</div>
+
+<script>
+/* =========================================================
+   정보 데이터 — 인쇄 전 해당 연도 공고로 확인하세요.
+   자격증 형식: [자격명, 시행기관, 필기(또는 이론), 실기, 체감 난이도 1~5]
+   직업 추가: JOBS에 항목을 넣고 CATS의 jobs 목록에 키를 추가
+   ========================================================= */
+const INFO_DATE = "2026년 10월 기준";
+const REGIONS = {
+  "서울":["서울특별시",["서울정수캠퍼스(용산구)","서울강서캠퍼스(강서구)"]],
+  "부산":["부산광역시",["부산캠퍼스","동부산캠퍼스"]],
+  "대구":["대구광역시",["대구캠퍼스","남대구캠퍼스"]],
+  "인천":["인천광역시",["인천캠퍼스","남인천캠퍼스"]],
+  "광주":["광주광역시",["광주캠퍼스"]],
+  "대전":["대전광역시",["대전캠퍼스"]],
+  "울산":["울산광역시",["울산캠퍼스"]],
+  "세종":["세종특별자치시",["대전캠퍼스(인근)","청주캠퍼스(인근)"]],
+  "경기":["경기도",["성남캠퍼스","화성캠퍼스","광명융합기술교육원","분당융합기술교육원"]],
+  "강원":["강원특별자치도",["춘천캠퍼스","원주캠퍼스","강릉캠퍼스"]],
+  "충북":["충청북도",["청주캠퍼스","충주캠퍼스"]],
+  "충남":["충청남도",["아산캠퍼스","충남캠퍼스"]],
+  "전북":["전북특별자치도",["전북캠퍼스","익산캠퍼스","신기술교육원(전주)"]],
+  "전남":["전라남도",["전남캠퍼스","순천캠퍼스"]],
+  "경북":["경상북도",["구미캠퍼스","포항캠퍼스","영주캠퍼스"]],
+  "경남":["경상남도",["창원캠퍼스","진주캠퍼스"]],
+  "제주":["제주특별자치도",["제주캠퍼스"]]
+};
+const CATS = [
+  {id:"tech",n:"기술·제조",s:"용접, 전기, 자동차 정비·도장, 장비·전자기기 수리",jobs:["weld","elec","car","pipe","carpaint","cmech","elecfix"]},
+  {id:"build",n:"건설·인테리어",s:"도배, 타일, 목공, 도장, 방수, 철근, 비계, 가구",jobs:["paper","tile","wood","excav","bpaint","waterp","rebar","scaff","furn"]},
+  {id:"food",n:"음식·카페",s:"조리, 제과제빵, 바리스타, 바텐더, 식품 가공",jobs:["cook","bake","barista","bartender","foodpr"]},
+  {id:"beauty",n:"미용·이용",s:"헤어 미용, 이발",jobs:["hair","barber"]},
+  {id:"move",n:"운전·물류",s:"화물 운송, 택시, 지게차, 드론",jobs:["truck","taxi","forklift","drone"]},
+  {id:"care",n:"돌봄·복지",s:"요양보호사, 사회복지사",jobs:["carer","social"]},
+  {id:"animal",n:"동물·식물",s:"반려견 훈련, 애견 미용, 조경, 꽃, 버섯 재배",jobs:["dog","petgroom","landscape","flower","mush"]},
+  {id:"office",n:"사무·컴퓨터",s:"컴퓨터 활용, 회계, 정보처리, 웹디자인",jobs:["comp","acct","it","webd"]},
+  {id:"facility",n:"건물·시설 관리",s:"냉난방 설비, 소방 안전, 경비, 승강기, 가스, 위험물",jobs:["hvac","fire","guard","lift","gas","haz"]},
+  {id:"service",n:"판매·생활 서비스",s:"매장 관리, 세탁",jobs:["retail","laundry"]}
+];
+/* ===== 자격증 사전: [자격명, 구분, 시행기관, 필기(이론), 실기, 체감 난이도 1~5] =====
+   구분: 국가 / 민간(국가공인) / 민간 / 교육 이수 */
+const KS="한국산업인력공단", KC="대한상공회의소", RT="도로교통공단", TS="한국교통안전공단", KH="한국보건의료인국가시험원";
+const CERT = {
+  weld1:["용접기능사","국가",KS,"용접 일반, 용접 재료, 안전관리","피복아크용접 작업",2],
+  weld2:["특수용접기능사","국가",KS,"용접 일반, 용접 재료, 안전관리","CO2 용접 작업",3],
+  weldI:["용접산업기사","국가",KS,"용접 공학·재료·설계 (기능사 취득 후 실무경력 등 응시자격 필요)","용접 작업형",4],
+  fork:["지게차운전기능사","국가",KS,"장비 구조, 운전·작업, 안전관리, 관련 법규","코스 운전, 화물 적재",2],
+  elec:["전기기능사","국가",KS,"전기 이론, 전기 기기, 전기 설비","전기 설비 배선 작업",3],
+  elecI:["전기산업기사","국가",KS,"전기자기학, 전력공학 등 (기능사 취득 후 실무경력 등 응시자격 필요)","필답형",4],
+  fire2:["소방안전관리자 2급","국가","한국소방안전원","강습교육 이수 후 시험 (소방 법령, 소방시설, 화재 대응)","없음",2],
+  car:["자동차정비기능사","국가",KS,"엔진, 섀시, 전기·전자 장치, 안전관리","정비 작업형",3],
+  carI:["자동차정비산업기사","국가",KS,"자동차 정비 심화 (실무경력 등 응시자격 필요)","정비 작업형",4],
+  paint:["자동차보수도장기능사","국가",KS,"도장 재료, 도장 작업, 안전관리","도장 작업형",2],
+  lic1:["운전면허 1종 보통","국가",RT,"교통 법규 (학과시험)","기능시험, 도로주행",2],
+  licL:["운전면허 1종 대형","국가",RT,"교통 법규 (만 19세 이상, 운전경력 1년 이상 등 요건)","기능시험",3],
+  tow:["운전면허 1종 특수(견인)","국가",RT,"교통 법규 (응시 요건 확인)","기능시험",3],
+  pipe:["배관기능사","국가",KS,"배관 재료, 배관 시공, 안전관리","배관 작업형",2],
+  energy:["에너지관리기능사","국가",KS,"보일러 설비·운전, 에너지 관련 법규","보일러 설비 작업형",3],
+  hvac:["공조냉동기계기능사","국가",KS,"공조냉동, 안전관리","냉동 설비 작업형",3],
+  paper:["도배기능사","국가",KS,"없음 (실기만 시행)","도배 시공 작업",2],
+  interior:["실내건축기능사","국가",KS,"실내 디자인, 재료, 시공","실내건축 도면 작업",3],
+  tile:["타일기능사","국가",KS,"없음 (실기만 시행)","타일 시공 작업",2],
+  plaster:["미장기능사","국가",KS,"없음 (실기만 시행)","미장 시공 작업",2],
+  wood:["건축목공기능사","국가",KS,"없음 (실기만 시행)","목공 작업형",2],
+  form:["거푸집기능사","국가",KS,"없음 (실기만 시행)","거푸집 작업형",2],
+  excav:["굴착기운전기능사","국가",KS,"장비 구조, 운전·작업, 안전관리, 관련 법규","코스 운전, 굴착 작업",2],
+  loader:["로더운전기능사","국가",KS,"장비 구조, 운전·작업, 안전관리, 관련 법규","코스 운전, 작업",2],
+  kcook:["한식조리기능사","국가",KS,"재료 관리, 음식 조리, 위생·안전관리","지정 메뉴 조리",2],
+  wcook:["양식조리기능사","국가",KS,"재료 관리, 음식 조리, 위생·안전관리","지정 메뉴 조리",2],
+  ccook:["중식조리기능사","국가",KS,"재료 관리, 음식 조리, 위생·안전관리","지정 메뉴 조리",2],
+  jcook:["일식조리기능사","국가",KS,"재료 관리, 음식 조리, 위생·안전관리","지정 메뉴 조리",2],
+  cookI:["조리산업기사(한식)","국가",KS,"조리 심화 (실무경력 등 응시자격 필요)","조리 작업형",4],
+  bakeC:["제과기능사","국가",KS,"재료, 제조 이론, 위생관리","지정 품목 제조",2],
+  bakeB:["제빵기능사","국가",KS,"재료, 제조 이론, 위생관리","지정 품목 제조",2],
+  barista:["바리스타 2급","민간","한국커피협회 등 발급 기관","커피 이론 (기관마다 다름)","에스프레소 추출 등",1],
+  hair:["미용사(일반)","국가",KS,"미용 이론, 피부학, 공중위생관리","커트·펌·드라이 등",3],
+  skin:["미용사(피부)","국가",KS,"피부 미용 이론, 공중위생관리","피부 관리 작업",3],
+  nail:["미용사(네일)","국가",KS,"네일 미용 이론, 공중위생관리","네일 관리 작업",2],
+  makeup:["미용사(메이크업)","국가",KS,"메이크업 이론, 공중위생관리","메이크업 작업",3],
+  barber:["이용사","국가",KS,"이용 이론, 공중위생관리","이발·면도 작업",3],
+  cargo:["화물운송종사자격","국가",TS,"교통·화물 관련 법규, 화물 취급, 안전운행, 운송서비스 (운전면허·운전경력 요건 확인)","없음",2],
+  taxi:["택시운전자격","국가",TS,"교통·운수 법규, 안전운행, 운송서비스, 지리 (운전경력 요건 확인)","없음",2],
+  logi:["물류관리사","국가",KS,"물류관리론, 화물운송론, 보관하역론, 국제물류론, 물류관련법규","없음",4],
+  carer:["요양보호사","국가",KH,"지정 교육기관 교육 이수 후 필기시험","실기시험",2],
+  nurseA:["간호조무사","국가",KH,"간호조무사 교육기관 이론·실습 이수 후 필기시험","없음 (교육 중 실습)",3],
+  social:["사회복지사 2급","국가","한국사회복지사협회","시험 없음: 사회복지 필수·선택 과목 이수","현장실습 이수",3],
+  jobc:["직업상담사 2급","국가",KS,"직업상담학, 직업심리학, 직업정보론, 노동시장론, 노동관계법규","필답형",3],
+  dogN:["반려동물행동지도사 2급","국가","농림축산식품부","반려동물 행동학, 관리학, 훈련학, 직업윤리 및 법률, 보호자 교육 및 상담","반려견과 함께 기본 지도능력 평가",3],
+  dogP:["반려견 훈련사","민간","민간 발급 기관","기관마다 다름","기관마다 다름",2],
+  groom:["반려견 미용(스타일리스트)","민간","민간 발급 기관","미용 이론 (기관마다 다름)","미용 작업 (기관마다 다름)",2],
+  land:["조경기능사","국가",KS,"조경 설계·시공·관리","조경 작업형",2],
+  forest:["산림기능사","국가",KS,"산림 조성·보호","산림 작업형",2],
+  flower:["화훼장식기능사","국가",KS,"화훼장식 이론, 식물 소재","작품 제작",2],
+  floP:["플로리스트","민간","민간 발급 기관","기관마다 다름","작품 제작",2],
+  comp2:["컴퓨터활용능력 2급","국가",KC,"컴퓨터 일반, 스프레드시트 일반","스프레드시트(엑셀) 실무",2],
+  comp1:["컴퓨터활용능력 1급","국가",KC,"컴퓨터 일반, 스프레드시트, 데이터베이스","엑셀·액세스 실무",4],
+  word:["워드프로세서","국가",KC,"워드프로세싱 일반, 컴퓨터 일반","문서 작성 실무",2],
+  itq:["ITQ","민간(국가공인)","한국생산성본부","없음","한글·엑셀·파워포인트 등 과목 선택",1],
+  acc2:["전산회계 2급","민간(국가공인)","한국세무사회","회계 원리 (이론)","회계 프로그램 실무",2],
+  acc1:["전산회계 1급","민간(국가공인)","한국세무사회","회계 원리, 원가회계 (이론)","회계 프로그램 실무",3],
+  tax2:["전산세무 2급","민간(국가공인)","한국세무사회","재무·원가회계, 세무 (이론)","세무 프로그램 실무",4],
+  info:["정보처리기능사","국가",KS,"정보처리 일반","정보처리 실무 (필답형)",3],
+  linux:["리눅스마스터 2급","민간(국가공인)","한국정보통신진흥협회","리눅스 운영·관리 (1차)","2차 시험",3],
+  net:["네트워크관리사 2급","민간(국가공인)","한국정보통신자격협회","네트워크 일반, TCP/IP 등","네트워크 실무",3],
+  guard:["일반경비원 신임교육","교육 이수","경비업법 지정 교육기관","시험 없음: 신임교육 이수","없음",1],
+  bpaint:["건축도장기능사","국가",KS,"없음 (실기만 시행)","건축도장 작업 (도면대로 붓·롤러 도장)",2],
+  waterp:["방수기능사","국가",KS,"없음 (실기만 시행)","방수 작업 (방수재 바르기·시트 붙이기)",2],
+  rebar:["철근기능사","국가",KS,"없음 (실기만 시행)","철근 가공·배근·조립 작업",2],
+  scaff:["비계기능사","국가",KS,"없음 (실기만 시행)","비계 설치 작업 (세부 내용 확인 필요)",2],
+  furn:["가구제작기능사","국가",KS,"가구제도, 가구재료, 가구공작","도면 보고 마름질·짜맞춤 작업",3],
+  cmech:["건설기계정비기능사","국가",KS,"엔진, 섀시, 유압, 전기, 안전관리 (과목명 확인 필요)","엔진·전기·차체 정비 작업형",3],
+  elecd:["전자기능사","국가",KS,"전자회로 설계, 전자회로 성능구현 및 검증","전자회로 제작 작업형",3],
+  lift:["승강기기능사","국가",KS,"승강기 설치, 유지관리, 안전관리","와이어로프 작업, 운전제어회로 구성",3],
+  gas:["가스기능사","국가",KS,"가스안전관리, 가스장치 및 기기, 가스일반","필답형 + 동영상",3],
+  haz:["위험물기능사","국가",KS,"화재 예방과 소화 방법, 위험물의 성질과 취급 (과목명 확인 필요)","위험물 취급 실무 (필답형)",3],
+  laundry:["세탁기능사","국가",KS,"세탁대상, 세탁방법, 세탁관리","세탁 실무 작업형",2],
+  web:["웹디자인개발기능사","국가",KS,"웹페이지 구현, 웹페이지 제작","웹디자인 실무 작업형",3],
+  cg:["컴퓨터그래픽기능사","국가",KS,"시각디자인 일반, 컴퓨터그래픽","컴퓨터그래픽 작업형",3],
+  foodp:["식품가공기능사","국가",KS,"식품화학, 식품위생, 식품가공","식품가공 작업형",3],
+  bar:["조주기능사","국가",KS,"음료 특성, 칵테일 조주, 영업장 관리 (외국어 포함)","칵테일 만들기 작업형",2],
+  mush:["버섯종균기능사","국가",KS,"종균 제조, 버섯 재배","버섯종균 제조 작업형",2],
+  organic:["유기농업기능사","국가",KS,"유기작물 재배, 토양관리, 유기농업 일반","유기농산물 재배 실무 (필답형)",2],
+  drone1:["초경량비행장치 조종자 1종(무인멀티콥터)","국가",TS,"학과시험: 항공법규, 항공기상, 비행이론·운용 (만 14세 이상)","실기시험 (비행경력 20시간 필요)",3],
+  drone2:["초경량비행장치 조종자 2종(무인멀티콥터)","국가",TS,"학과시험: 항공법규, 항공기상, 비행이론·운용 (만 14세 이상)","실기시험 (비행경력 10시간 필요)",2],
+  retail2:["유통관리사 2급","국가",KC,"유통물류일반관리, 상권분석, 유통마케팅, 유통정보","없음",3],
+  guardL:["경비지도사","국가",KS,"1차: 법학개론, 민간경비론 / 2차: 경비업법 등","없음",4]
+};
+/* ===== 배울 수 있는 곳: 지역(r)과 직업(j)에 맞춰 문장을 만듦 ===== */
+const polyOf = r => (REGIONS[r]||["",[]])[1].join(", ");
+const TRAIN = {
+  inside:(j,r)=>["수용 중","교정시설 직업훈련 과정 신청 (집중 직업훈련 교정시설 이송 포함, 교육 담당에게 문의)"],
+  self:(j,r)=>["수용 중","필기 교재로 독학 (교정시설 도서 반입 절차 확인)"],
+  poly:(j,r)=>["국비 공공훈련",`한국폴리텍대학 ${polyOf(r)}: 기능사 취득 과정 등 국비 직업훈련. 캠퍼스별 개설 과정은 kopo.ac.kr 또는 전화로 확인`],
+  kigan:(j,r)=>["국비 공공훈련",`국가기간·전략산업직종훈련: 고용24(work24.go.kr)에서 지역 '${r}', 검색어 '${j.kw}'. 훈련비 지원과 훈련장려금이 있는 과정이 있습니다 (과정별 조건 확인)`],
+  card:(j,r)=>["직업전문학교·학원",`국민내일배움카드 지정 훈련기관: 고용24에서 지역 '${r}', 검색어 '${j.kw}'. 훈련 기간, 자격 취득률, 취업률을 비교해 고르세요`],
+  lic:(j,r)=>["면허 취득",`도로교통공단 ${r} 지역 운전면허시험장(safedriving.or.kr) 또는 지정 자동차운전전문학원`],
+  kotsa:(j,r)=>["자격시험",`한국교통안전공단 ${r} 지역 시험장 (한국교통안전공단 누리집에서 일정 확인)`],
+  carerEdu:(j,r)=>["교육기관",`요양보호사교육원: ${r} 시·군·구청 노인복지 담당 부서에 지정 교육기관 목록 문의`],
+  kfsi:(j,r)=>["강습교육",`한국소방안전원 ${r} 지역 지부 강습교육 (kfsi.or.kr에서 신청)`],
+  guardEdu:(j,r)=>["교육기관",`일반경비원 신임교육: 경비업법에 따라 지정된 교육기관 (${r} 지역 교육 일정 확인)`],
+  dogEdu:(j,r)=>["실무·시험",`${r} 지역 반려견 훈련소 보조 훈련사로 실무 경험. 시험 정보는 반려동물행동지도사 자격정보시스템(apms.epis.or.kr/pet)`],
+  groomEdu:(j,r)=>["실무",`민간자격 발급 기관이 인정하는 애견미용 교육기관 수강, ${r} 지역 반려견 미용실 보조로 실무 경험`],
+  cbEdu:(j,r)=>["교육기관","학점은행제: 국가평생교육진흥원(cb.or.kr)에서 평가인정 원격교육기관 확인"],
+  q:(j,r)=>["시험 접수",`큐넷(q-net.or.kr), 한국산업인력공단 ${r} 지역 본부·지사 시험장`],
+  korcham:(j,r)=>["시험 접수",`${r} 지역 상공회의소 (license.korcham.net)`],
+  kacpta:(j,r)=>["시험 접수","한국세무사회 자격시험 누리집 (license.kacpta.or.kr)"],
+  hug:(j,r)=>["출소 후 지원",`한국법무보호복지공단 ${r} 지역 지부: 직업훈련 연계와 취업 지원`]
+};
+/* ===== 직업: r=꼭 필요한 자격증, a=있으면 좋은 자격증, tr=배울 수 있는 곳, lim=제한 가능 범죄 유형 ===== */
+const JOBS = {
+  weld:{n:"용접사",d:"조선·건설·제조 현장 수요가 꾸준하고 숙련도에 따라 임금이 오릅니다.",kw:"용접",r:["weld1","weld2"],a:["fork","weldI"],tr:["inside","poly","kigan","card","q"],p:["교정시설 직업훈련(용접) 지원","필기 학습 후 실기 연습","출소 후 국비 훈련으로 심화, 현장 취업"]},
+  elec:{n:"전기 기술자",d:"건물·설비 유지보수 수요가 많고 상위 자격으로 성장 경로가 분명합니다.",kw:"전기",r:["elec"],a:["fire2","elecI"],tr:["inside","poly","kigan","card","q"],p:["필기 학습 (계산 문제가 있어 기초 수학 복습 권장)","실기 배선 작업 연습","시설관리·전기공사 업체 취업 후 경력 쌓기"]},
+  car:{n:"자동차 정비사",d:"정비업체·부품업체 취업이 가능하고 숙련 후 독립도 고려할 수 있습니다.",kw:"자동차정비",r:["car"],a:["lic1","paint","carI"],tr:["inside","poly","kigan","card","q"],p:["교정시설 직업훈련(자동차정비) 과정 확인","필기 학습 후 실기 연습","정비업체 보조로 경력 시작"]},
+  pipe:{n:"배관공",d:"건물 신축·보수 현장에서 꾸준히 필요한 기술직입니다.",kw:"배관",r:["pipe"],a:["weld1","energy","hvac"],tr:["inside","poly","kigan","card","q"],p:["필기 학습","직업훈련기관에서 실기 연습","설비·건설 업체 보조로 시작"]},
+  paper:{n:"도배사",d:"현장 기술 중심이라 실력이 쌓이면 일감이 안정적이고 독립도 가능합니다.",kw:"도배",r:["paper"],a:["interior","tile"],tr:["inside","poly","card","q"],p:["필기 없이 실기만 봅니다","직업훈련기관 수강","현장 보조로 시작해 기술 습득"]},
+  tile:{n:"타일공",d:"인테리어·건설 현장 수요가 꾸준한 기술직입니다.",kw:"타일",r:["tile"],a:["plaster","paper"],tr:["inside","poly","card","q"],p:["필기 없이 실기만 봅니다","실기 시공 연습","현장 보조로 경력 시작"]},
+  wood:{n:"목수",d:"건축·인테리어 목공 현장에서 일하며 숙련도가 곧 경쟁력입니다.",kw:"목공",r:["wood"],a:["form","interior"],tr:["inside","poly","card","q"],p:["교정시설 목공 훈련 여부 확인","실기 연습","현장 보조로 경력 시작"]},
+  excav:{n:"굴착기 기사",d:"건설·토목 현장 일자리가 많고 비교적 짧은 기간에 자격 취득이 가능합니다.",kw:"굴착기",r:["excav"],a:["lic1","fork","loader"],tr:["self","card","q"],p:["필기는 수용 중 독학 가능","실기는 장비 실습이 필요해 출소 후 훈련기관 연계","건설 현장 구인처 연계"]},
+  cook:{n:"조리사",d:"음식점·단체급식 등 취업처가 넓고 경력이 쌓이면 창업으로 이어질 수 있습니다.",kw:"조리기능사",r:["kcook"],a:["wcook","ccook","jcook","cookI"],tr:["inside","card","q"],p:["교정시설 직업훈련(조리) 과정 확인","필기 합격 후 실기 메뉴 반복 연습","단체급식·음식점 주방 보조로 시작"]},
+  bake:{n:"제과·제빵사",d:"베이커리·카페 취업 후 소규모 창업까지 고려할 수 있습니다.",kw:"제과제빵",r:["bakeC","bakeB"],a:["barista"],tr:["inside","card","q"],p:["필기 이론(재료·위생) 학습","실기 연습","베이커리 보조로 경력 시작"]},
+  barista:{n:"바리스타",d:"카페 취업·창업에 활용됩니다. 바리스타 자격은 민간자격입니다.",kw:"바리스타",r:["barista"],a:["bakeC","bakeB"],tr:["inside","card"],p:["발급 기관의 공신력 확인","교정시설 내 관련 교육 여부 확인","카페 근무로 경력 시작"]},
+  hair:{n:"미용사",d:"미용실 취업 후 경력을 쌓아 창업까지 이어질 수 있습니다.",kw:"미용",r:["hair"],a:["skin","nail","makeup"],tr:["inside","card","q"],p:["교정시설 직업훈련(미용) 과정 확인","필기 학습 후 실기 연습","미용실 보조로 경력 시작"]},
+  barber:{n:"이용사",d:"이발소·바버숍에서 일하며 숙련 후 독립할 수 있습니다.",kw:"이용",r:["barber"],a:["hair"],tr:["inside","card","q"],p:["교정시설 직업훈련(이용) 과정 확인","실기 연습","바버숍 보조로 경력 시작"]},
+  truck:{n:"화물 운송 기사",d:"택배·화물 운송 일자리가 많지만 범죄경력에 따라 자격 취득이 제한될 수 있습니다.",kw:"운전",r:["lic1","cargo"],a:["licL","tow","fork"],tr:["self","lic","kotsa"],lim:["sex","drug","violent","traffic"],p:["범죄경력에 따른 자격 결격 여부부터 확인","운전면허 상태(취소·정지 여부) 확인","면허 취득 후 화물운송종사자격 준비"]},
+  taxi:{n:"택시 기사",d:"범죄경력에 따라 일정 기간 택시운전자격 취득이 제한될 수 있어 사전 확인이 필수입니다.",kw:"운전",r:["lic1","taxi"],a:[],tr:["self","lic","kotsa"],lim:["sex","drug","violent","traffic"],p:["범죄경력에 따른 자격 제한 여부부터 확인","운전면허와 운전경력 요건 확인","자격시험 준비"]},
+  forklift:{n:"지게차 기사",d:"물류센터·공장 일자리가 많고 비교적 짧은 기간에 자격 취득이 가능합니다.",kw:"지게차",r:["fork"],a:["lic1","excav","logi"],tr:["self","card","q"],p:["필기는 수용 중 독학 가능","실기는 출소 후 훈련기관 연계","물류센터 구인처 연계"]},
+  carer:{n:"요양보호사",d:"수요가 많은 분야지만 법에 따른 결격사유와 취업제한이 있습니다.",kw:"요양보호사",r:["carer"],a:["lic1","social","nurseA"],tr:["self","carerEdu"],lim:["sex","abuse","drug","any"],p:["결격사유·취업제한 해당 여부 확인","출소 후 요양보호사교육원 수강","합격 후 요양시설·재가센터 취업"]},
+  social:{n:"사회복지사",d:"복지기관에서 일하려면 학위 과정이 필요하고 결격사유가 있습니다.",kw:"사회복지",r:["social"],a:["carer","jobc"],tr:["self","cbEdu"],lim:["sex","abuse","any"],p:["결격사유 해당 여부 확인","고졸 학력이 없으면 검정고시부터","학점은행제 등으로 과목 이수"]},
+  dog:{n:"반려견 훈련사",d:"국가자격 '반려동물행동지도사'가 있으며 반려견 행동교정·훈련·보호자 교육을 합니다.",kw:"반려동물",r:["dogN"],a:["dogP","groom"],tr:["self","dogEdu","card"],lim:["drug"],
+    p:["필기는 수용 중 교재로 독학 가능 (보통 연 1회, 가을 필기)","실기에는 본인 또는 직계가족 명의로 등록된 6개월령 이상 반려견이 필요","출소 후 훈련소 보조로 경력을 쌓으며 실기 준비"],
+    note:"만 18세 이상 응시 가능. 동물보호법상 결격사유가 있으니 자격정보시스템에서 확인하세요."},
+  petgroom:{n:"애견 미용사",d:"반려동물 미용실·동물병원 등에서 일하며 창업도 가능합니다. 관련 자격은 민간자격입니다.",kw:"애견미용",r:["groom"],a:["dogN"],tr:["groomEdu","card"],p:["발급 기관의 공신력 확인","출소 후 교육기관에서 실기 연습","애견미용실 보조로 경력 시작"]},
+  landscape:{n:"조경 기능공",d:"공원·아파트 단지 녹지 조성과 관리 일을 합니다.",kw:"조경",r:["land"],a:["forest","lic1","excav"],tr:["inside","poly","card","q"],p:["필기 학습","실기 연습","조경 업체 현장 보조로 시작"]},
+  flower:{n:"플로리스트",d:"꽃집·행사장 장식 일을 하며 창업으로 이어질 수 있습니다.",kw:"화훼장식",r:["flower"],a:["floP","land"],tr:["inside","card","q"],p:["교정시설 원예 훈련 여부 확인","실기 작품 연습","꽃집 보조로 경력 시작"]},
+  comp:{n:"사무 보조",d:"대부분의 사무직에서 기본으로 요구하는 컴퓨터 능력을 증명합니다.",kw:"컴퓨터활용능력",r:["comp2"],a:["word","itq","comp1"],tr:["inside","card","korcham"],p:["필기 학습","실기는 컴퓨터 실습 필요 (교정시설 교육 여부 확인)","사무 보조직 지원"]},
+  acct:{n:"회계 사무원",d:"중소기업·세무사무소 경리 업무에 활용됩니다.",kw:"전산회계",r:["acc2"],a:["acc1","tax2","comp2"],tr:["self","card","kacpta"],lim:["property"],p:["회계 원리 학습","회계 프로그램 실습","경리·회계 보조직 지원"]},
+  it:{n:"IT 기초 기술자",d:"정보처리 기초 지식을 증명하는 입문 자격입니다.",kw:"정보처리",r:["info"],a:["comp2","linux","net"],tr:["self","poly","card","q"],p:["필기 학습","실기 문제 연습","IT 관련 보조직 지원"]},
+  hvac:{n:"냉난방 설비 기사",d:"건물 냉난방·냉동 설비를 설치하고 관리합니다. 시설관리 취업에 유리합니다.",kw:"공조냉동",r:["hvac"],a:["energy","elec","fire2"],tr:["inside","poly","kigan","card","q"],p:["필기 학습","실기 연습","설비·시설관리 업체 취업"]},
+  fire:{n:"건물 소방 안전 관리",d:"일정 규모 이상 건물은 소방안전관리자를 두어야 해 시설관리직 취업에 도움이 됩니다.",kw:"소방안전관리",r:["fire2"],a:["elec","hvac","energy"],tr:["self","kfsi"],p:["출소 후 한국소방안전원 강습 신청","시험 합격 후 선임 자격 확보","아파트·건물 관리직 지원"]},
+  guard:{n:"경비원",d:"범죄경력에 따라 일정 기간 경비원으로 일할 수 없으니 사전 확인이 필수입니다.",kw:"경비",r:["guard"],a:["fire2","lic1","guardL"],tr:["guardEdu"],lim:["sex","violent","property","drug"],p:["범죄경력에 따른 결격 여부부터 확인","신임교육 이수","경비업체 지원"]},
+  carpaint:{n:"자동차 도장공",d:"사고 차량을 다시 칠하는 일로 정비공장·공업사 수요가 꾸준합니다.",kw:"자동차보수도장",r:["paint"],a:["car","lic1"],tr:["poly","card","q"],p:["필기 학습 (도장 재료·작업·안전)","훈련기관에서 실기 도장 연습","공업사·정비공장 보조로 시작"]},
+  cmech:{n:"건설기계 정비사",d:"굴착기·지게차 같은 장비를 고치는 일로 건설기계 정비업체에서 일합니다.",kw:"건설기계정비",r:["cmech"],a:["excav","fork","car"],tr:["self","poly","card","q"],p:["필기는 수용 중 독학 가능","출소 후 훈련기관에서 엔진·유압 실습","건설기계 정비업체 보조로 시작"]},
+  elecfix:{n:"전자기기 수리 기술자",d:"전자제품·설비를 조립하고 고치며 공장 설비 보수 일을 합니다.",kw:"전자",r:["elecd"],a:["elec","info"],tr:["self","poly","card","q"],p:["필기 학습 (전자회로 기초)","실기 회로 제작 연습","전자 제조·수리 업체 취업"]},
+  bpaint:{n:"건축 도장공",d:"건물 벽과 천장에 페인트를 칠하는 일로 신축·보수 현장 수요가 꾸준합니다.",kw:"건축도장",r:["bpaint"],a:["paper","waterp"],tr:["inside","poly","card","q"],p:["필기 없이 실기만 봅니다","교정시설 직업훈련(건축도장) 과정 확인","현장 보조로 경력 시작"],note:"상시검정 종목이라 시험 기회가 많습니다."},
+  waterp:{n:"방수공",d:"옥상·욕실·지하에 물이 새지 않게 시공하는 일로 보수 일감이 많습니다.",kw:"방수",r:["waterp"],a:["bpaint","tile"],tr:["card","q"],p:["필기 없이 실기만 봅니다","훈련기관에서 방수 시공 연습","방수 업체 보조로 시작"],note:"상시검정 종목이라 시험 기회가 많습니다."},
+  rebar:{n:"철근공",d:"건물 뼈대가 되는 철근을 자르고 엮는 일로 건설 현장 수요가 많습니다.",kw:"철근",r:["rebar"],a:["form","weld1"],tr:["card","q"],p:["필기 없이 실기만 봅니다","훈련기관에서 철근 가공·조립 연습","건설 현장 철근팀 보조로 시작"]},
+  scaff:{n:"비계공",d:"높은 곳 작업을 위한 발판(비계)을 설치하는 일로 숙련자 임금이 높은 편입니다.",kw:"비계",r:["scaff"],a:["form","rebar"],tr:["card","q"],p:["필기 없이 실기만 봅니다","훈련기관에서 설치 연습","현장 보조로 시작 (높은 곳 작업이라 안전교육 필수)"]},
+  furn:{n:"가구 제작자",d:"공방·가구 공장에서 나무 가구를 만들고, 숙련 후 공방 창업도 할 수 있습니다.",kw:"가구제작",r:["furn"],a:["wood","interior"],tr:["poly","card","q"],p:["필기 학습 (제도·재료·공작)","실기 짜맞춤 연습","가구 공장·공방 보조로 시작"]},
+  foodpr:{n:"식품 가공원",d:"식품 공장에서 제품을 만들고 품질을 관리합니다. 생산직 일자리가 많습니다.",kw:"식품가공",r:["foodp"],a:["kcook","fork"],tr:["self","card","q"],p:["필기 학습 (식품화학·위생·가공)","실기 가공 연습","식품 공장 생산직 지원"]},
+  bartender:{n:"바텐더",d:"바·호텔에서 칵테일과 음료를 만들고 손님을 응대합니다.",kw:"조주",r:["bar"],a:["barista"],tr:["self","card","q"],p:["필기 학습 (음료·칵테일 이론)","실기 칵테일 연습","바·호텔 보조로 경력 시작"],note:"시험에는 나이 제한이 없지만, 술을 주로 파는 업소는 만 19세 미만 청소년을 고용할 수 없습니다."},
+  drone:{n:"드론 조종사",d:"농약 방제, 촬영, 시설 점검에 쓰입니다. 일감은 계절과 지역에 따라 차이가 큽니다.",kw:"드론",r:["drone1"],a:["drone2","lic1"],tr:["self","card","kotsa"],p:["학과시험은 수용 중 독학 가능","출소 후 전문교육기관에서 비행경력 쌓기 (1종 20시간)","실기 합격 후 방제·촬영 업체 연계"],note:"만 14세 이상 응시 가능. 신체검사증명 또는 2종 보통 이상 운전면허가 필요합니다(확인 필요)."},
+  mush:{n:"버섯 재배사",d:"버섯 농장·종균 업체에서 일하며 귀농·창업으로 이어질 수 있습니다.",kw:"버섯",r:["mush"],a:["organic","land"],tr:["inside","self","card","q"],p:["교정시설 직업훈련(버섯종균) 과정 확인","필기 학습 후 종균 제조 실기 연습","버섯 농장 취업"]},
+  webd:{n:"웹디자이너",d:"홈페이지와 온라인 쇼핑몰 화면을 만듭니다. 작품집(포트폴리오)이 중요합니다.",kw:"웹디자인",r:["web"],a:["cg","comp2"],tr:["self","card","q"],p:["필기 학습","실기는 컴퓨터 실습 필요 (교정시설 교육 여부 확인)","작품집을 만들어 쇼핑몰·디자인 업체 지원"]},
+  lift:{n:"승강기 기술자",d:"엘리베이터 설치와 점검 일로 건물마다 정기 점검이 필요해 수요가 꾸준합니다.",kw:"승강기",r:["lift"],a:["elec","fire2"],tr:["self","poly","card","q"],p:["필기 학습","실기 와이어로프·제어회로 연습","승강기 유지관리 업체 취업"]},
+  gas:{n:"가스 설비 기사",d:"도시가스·LPG 시설을 설치하고 점검합니다. 가스 업체·충전소에서 일합니다.",kw:"가스",r:["gas"],a:["pipe","energy"],tr:["self","card","q"],p:["필기는 수용 중 독학 가능","실기 필답·동영상 문제 연습","도시가스·충전소·설비 업체 지원"]},
+  haz:{n:"위험물 안전관리원",d:"주유소·화학 공장 같은 위험물 시설의 안전관리 일을 합니다.",kw:"위험물",r:["haz"],a:["fire2","gas"],tr:["self","card","q"],p:["필기는 수용 중 독학 가능 (실기도 필답형)","실기 대비 계산 문제 연습","주유소·화학 공장·물류창고 지원"]},
+  laundry:{n:"세탁 기술자",d:"세탁소·호텔·세탁 공장에서 일하며 세탁소 창업으로 이어질 수 있습니다.",kw:"세탁",r:["laundry"],a:["lic1"],tr:["inside","card","q"],p:["교정시설 직업훈련(세탁) 과정 확인","필기 학습 후 실기 연습","세탁 공장·세탁소 보조로 시작"]},
+  retail:{n:"매장 관리자",d:"마트·편의점·매장에서 상품 진열, 재고, 판매를 관리합니다.",kw:"유통관리",r:["retail2"],a:["comp2","fork"],tr:["self","korcham"],p:["필기만 있어 수용 중 독학 가능","매장 판매직으로 경력 시작","경력을 쌓아 점장·관리직 도전"]}
+};
+/* ===== 직업별로 이 일을 하는 사람 (2026-10-03 확인, 참고용). 인터넷 없이 쓰므로 주소는 넣지 않음 ===== */
+const ROLE = {
+  weld:[["HAGOJIBI", "실무 용접 노하우 영상으로 전 세계 용접공 시청자를 모은 한국인 용접 기술 유튜버 (본명 비공개)", "유튜브 「weld HAGOJIBI」"], ["조항국", "용접기 업계 약 20년 경력 후 '세다용접기'를 창업, 직접 출연하는 유튜브가 회사 매출의 약 70%를 만든다고 보도됨", "유튜브 「세다용접기 조프로」"]],
+  elec:[["송건웅", "전기공학 전공, 전기기사·전기기능사 강사로 개인 채널 운영", "유튜브 「전기는빠지직」"]],
+  car:[["박병일", "'대한민국 자동차 정비 명장', 정비 자격증 17개, 급발진 원인 분석으로 유명", "유튜브 「박병일의 명장본색」 / 책 『대한민국 자동차 명장 박병일의 자동차 백과』(라의눈, 2017.11)"], ["김창복", "1978년부터 여수에서 정비소를 운영하는 차량기술사·기능장, 2019년 유튜브 시작", "유튜브 「차박사TV」"]],
+  pipe:[["어재욱", "배관청소 업체 '일통배관케어' 대표로 여러 지역 팀을 운영, 막힌 하수구를 뚫는 과정을 보여줌", "유튜브 「하수구의제왕」"]],
+  paper:[["배윤슬", "연세대 사회복지학과 졸업 후 직장을 그만두고 도배사가 되어 성장한 이야기", "책 『청년 도배사 이야기』(궁리출판, 2021.07)"]],
+  tile:[["최지웅", "언론사 직원에서 타일공으로 전직해 2015년 '악어타일' 창업, 시공·교육·출판을 함께 하는 대표", "책 『나도 타일을 배워볼까?』(악어타일, 2023.08)"], ["김금선", "건설 40년 경력, 폴리텍 13년 강의, 아파트 품질관리자로 일하며 타일 실무서를 씀", "전자책 『타일공사 길잡이』(유페이퍼, 2024.11)"]],
+  wood:[["김현민", "고교 축구선수 출신으로 30대 초반에 인테리어 목수가 되어 '좋아하는 일로 월 천만 원'을 다룬 책을 씀", "책 『청년 목수』(라온북, 2018.04)"], ["이일헌 (마법망치)", "1989년부터 30년 넘게 일한 내장 목수, 초보 목수를 위한 실무 교과서 저자", "책 『마법망치의 내장 목수 교과서』(하움출판사, 2022.03)"]],
+  excav:[["신영근 (시민기자)", "60대 재취업 준비생이 굴착기운전기능사를 직접 따 본 수기, 실기 합격률·학원 기간 등 현실 정보", "신문 기사로 소개됨"]],
+  cook:[["최강록", "일식 셰프로 요리 경연 프로그램에서 두 차례 우승했고 책과 유튜브를 함께 운영", "책 『최강록의 요리 노트』(클, 2023.08) / 유튜브 「최강록 Ultra Taste Diary」"], ["안유성", "대한민국 조리명장으로 광주에서 식당 4곳을 경영하며 조리학 박사 학위도 있음", "유튜브 「명장 안유성」"]],
+  bake:[["김영모", "고교 중퇴 후 17세에 제과점 보조로 시작해 6평 가게를 차렸고, 지금은 대한민국 제과명장이자 과자점 대표", "책 『빵 굽는 CEO』(김영사, 2005.09)"], ["박준서", "대한민국 제과명장으로 빵집을 운영하며 제빵 강의도 함", "유튜브 「빵준서」 / 책 『빵준서가 전하는 첫 번째 레시피』(이프애드, 2022.09)"]],
+  barista:[["전주연", "주말 아르바이트로 시작해 2019년 한국인 최초 월드바리스타챔피언이 되었고, 지금은 부산 모모스커피 공동대표", "유튜브 「모모스커피」 (회사 채널)"], ["안치훈 (안스타)", "바리스타 자격증을 딴 뒤 커피 브랜드 회사와 온라인 교육 사업을 하는 대표", "유튜브 「안스타」"], ["노주빈", "17년차 바리스타로 카페를 닫은 뒤 유튜브와 원두 판매로 바꿔 월 매출 최대 1억3천만원을 냄", "유튜브 「그냥 원두커피」"]],
+  hair:[["차홍", "미용실 견습생으로 시작해 미용실 체인과 아카데미를 운영하는 대표", "책 『모락모락』(문학동네, 2022.10)"]],
+  barber:[["김승래", "홍대 바버숍 대표로 해외 바버 전문지에 소개됨", "유튜브 「이발사 김승래」"], ["이재천", "14세에 이발을 시작해 56년 경력으로 2026년 이용 분야 대한민국명장이 됨, 증평에서 이발관 운영", "신문 기사로 소개됨"], ["정철수", "호텔 이발소에서 57년 일한 뒤 70대에 홍대에 바버숍을 엶", "신문 기사로 소개됨"]],
+  truck:[["권기웅 (권마키)", "21~25톤 화물차를 운영하는 개인 차주로 업계 현실과 초보 기사 조언을 다룸, \"지입 사기를 피하려면 고용 기사로 먼저 경험을 쌓으라\"고 강조", "유튜브 「권마키」"]],
+  taxi:[["이영민", "서울 개인택시 기사로 월매출 약 700만 원, 순수익 약 300만 원을 직접 공개하며 차량·연료·세금 정보를 알려줌", "유튜브 「이영민의 개인택시」"], ["김지영", "60대에 개인택시 면허를 사서 생업으로 삼았고, 택시 운전 경험을 책과 신문 연재로 펴냄", "책 『거꾸로 가는 택시』(산지니, 2025.05)"], ["황성규", "기자 출신 국제택시 기사로, 외국인 손님에게 한국을 소개하며 만난 이야기를 책으로 냄", "책 『택시 기사가 만난 세계인』(메이킹북스, 2024.01)"]],
+  forklift:[["이용권", "공고 중장비과 시절부터 28년간 지게차를 몰았고, 지금은 '한빛중기' 대표로 대형 건설현장 일을 맡음", "신문 기사로 소개됨"]],
+  carer:[["이은주", "번역가였다가 요양보호사 자격을 따고 요양원에서 일하며 돌봄 에세이를 냄", "책 『나는 신들의 요양보호사입니다』(헤르츠나인, 2019.11)"], ["이양순", "50대에 요양보호사가 되어 요양시설에서 일하며 수필상을 받고 책을 냄", "책 『나는 행복한 요양보호사입니다』(꿈과희망, 2024.10)"], ["준희쌤", "11년차 간호사이자 요양보호사 교육 강사, 수험서 저자", "유튜브 「준희쌤 요양보호교육」"]],
+  social:[["양스텔라", "10년차 사회복지사가 복지정책·취업·현장 인터뷰를 다루는 채널", "유튜브 「복지마블TV」"], ["어대훈", "사회복지사 1급 전임 강사로 오래 강의해 온 수험 강사", "유튜브 「어쌤TV」"], ["김성천 외 21명", "현직 사회복지사 22명이 직업 세계를 솔직하게 소개한 책", "책 『사회복지사가 말하는 사회복지사』(부키, 2013.04)"]],
+  dog:[["강형욱", "보듬컴퍼니 대표, 가장 널리 알려진 반려견 훈련사로 책과 대형 유튜브 채널 운영", "유튜브 「강형욱의 보듬TV」 / 책 『내 강아지 마음 상담소』(혜다, 2019.11)"], ["신동석", "20년 넘게 반려견 훈련사로 일한 기록", "책 『나는 반려견 훈련사입니다』(설렘, 2025.09)"]],
+  petgroom:[["김수경·김남진", "30년 경력 애견미용 1세대, 국제 대회 입상과 대학 강의 경력", "책 『대한민국에서 애견미용사로 산다는 것』(이지퍼블리싱, 2021.12)"], ["위위쌤", "학원 수료 1년 만에 서울에 3인 미용샵을 차려 예약이 꽉 찬 사례", "유튜브 「애견미용사 위위쌤」"], ["안효범", "애견미용학원 대표로 기본기부터 취업·창업까지 가르치는 채널 운영", "유튜브 「벤자민의 애견미용연구소」"]],
+  landscape:[["오경아", "방송작가 16년 후 영국에서 정원을 공부해 정원디자인회사와 정원학교를 운영", "책 『정원의 발견』(궁리, 2013) 외 다수"]],
+  flower:[["나혜선", "20대에 작은 꽃 공방을 열어 6년 만에 월매출 약 1억 원 규모로 키웠고, 지금은 교육회사 ㈜러블리디어 대표이자 국제플라워스타일리스트협회 회장", "책 『작은 공방, 큰 비즈니스가 되다』(몽스북, 2025.11) / 유튜브 「플로리스트 나혜선」"], ["양지아", "현직 플로리스트가 자격·준비 방법·진로를 정리한 책", "책 『평생직업 플로리스트』(부크크, 2026.02)"]],
+  comp:[["전진권 (오빠두)", "대기업 10년 근무 후 엑셀 유튜버가 되어 ㈜오빠두에듀를 세움, Microsoft MVP, 기업 230곳 이상 강의", "유튜브 「오빠두엑셀」 / 책 『진짜 쓰는 실무 엑셀』(제이펍, 2022.02)"], ["한정희", "20년 경력 엑셀·한글 강사로 유튜브를 운영하며 실무서를 함께 씀", "유튜브 「짤막한 강좌」 / 책 『된다! 실무 엑셀 파워포인트 워드&한글』(이지스퍼블리싱, 2022.10, 공저)"]],
+  acct:[["조현석 세무사", "세무법인 대표 세무사이자 겸임교수, 전산회계·전산세무 수험서 저자로 무료 강의 운영", "유튜브 「조세무사 전산회계」"]],
+  it:[["우재남", "17년 넘게 리눅스를 가르친 강사, 리눅스 입문 베스트셀러 저자", "책 『이것이 리눅스다』(한빛미디어, 2015, 개정판 있음) / 유튜브 재생목록 「이것이 리눅스다」"], ["최호성 (널널한 개발자)", "1992년부터 일한 개발자, 보안 교육 전임교수, 네트워크 기초 강의", "유튜브 「널널한 개발자 TV」"], ["이흥직 (흥달쌤)", "20년 경력 개발자 출신 정보처리기사 강사, 자기 이름 수험서를 매년 출간", "책 『2026 흥달쌤의 정보처리기사 실기』(에듀콕스, 2026.01) / 유튜브 「흥달쌤」"]],
+  hvac:[["강진규 (JK강쌤)", "공조냉동·에너지관리 교육 사이트 운영, 수험서 9차 개정판까지 낸 저자", "책 『2026 공조냉동기계기능사 필기+무료동영상』(구민사, 2026.01) / 유튜브 「에듀강닷컴TV」"]],
+  fire:[["서채빈 (챕스랜드)", "소방안전관리자 시험 유튜버로 시작해 자기 이름 수험서 시리즈를 매년 출간", "유튜브 「챕스랜드 CHAEPS LAND」 / 책 『2026 챕스랜드 소방안전관리자 1급 찐정리 원샷 이론서』(종이향기, 2026.01)"]],
+  guard:[["최훈", "사업 실패 후 60대에 경비교육을 받고 아파트 경비원이 된 3년의 기록", "책 『나는 아파트 경비원입니다』(정미소, 2021.06)"], ["조정진", "은퇴 후 아파트·빌딩 경비원으로 일한 경험 기록", "책 『임계장 이야기』(후마니타스, 2020.03)"]],
+  carpaint:[["김광식", "1997년 자동차 보수도장 분야 최초·최연소 대한민국명장으로 산업훈장을 받았고 지금은 후배를 가르침", "신문 기사로 소개됨"], ["홍연구", "자동차 도장 36년 경력으로 표면처리 분야 명장이 되고 우수숙련기술자로 선정됨", "신문 기사로 소개됨"]],
+  cmech:[["김주호", "굴착기 등 중장비 정비를 맡아 건설기계정비기능사를 딴 뒤 2021년 기계정비 대한민국명장이 됨", "신문 기사로 소개됨"]],
+  elecfix:[["김도용", "18살에 세운상가에서 TV 수리를 배워 40년 넘게 전자 수리점을 직접 운영", "신문 기사로 소개됨"]],
+  bpaint:[["김소중", "아파트 재도장 회사를 세워 특허 62개를 갖고 4년 만에 매출을 4배로 키운 대표", "신문 기사로 소개됨"], ["윤영순", "44년간 아파트 외벽 도장·방수 한 분야만 해 회사를 세우고 방수 공법 특허를 가진 대표", "신문 기사로 소개됨"]],
+  waterp:[["윤영순", "44년간 아파트 외벽 도장·방수 한 분야만 해 회사를 세우고 방수 공법 특허를 가진 대표", "신문 기사로 소개됨"]],
+  rebar:[["박부용", "철근콘크리트 현장 20년 넘는 경력과 용접·크레인 면허를 갖춘 '현장형' 건설회사 대표", "신문 기사로 소개됨"]],
+  furn:[["김성헌", "가구공방과 목공 아카데미를 운영하는 가구 제작자", "책 『철학이 있는 목공수업』(초록비책공방, 2019.04)"], ["이승석", "용인에서 원목 가구 공방을 운영하며 만드는 과정을 공개", "유튜브 「이승석 Woodworker Lee」"], ["소병진", "전통 가구를 복원한 목공예 대한민국명장이자 국가무형유산 소목장", "신문 기사로 소개됨"]],
+  bartender:[["이진광 (광텐더)", "서울에서 바를 운영하는 오너 바텐더이자 조주기능사 수험서 저자", "책 『2026 유튜버 조선바텐더 조주기능사 필기+실기』(직업상점, 2025.11) / 유튜브 「조선바텐더 KOREA BARTENDER」"], ["임병진", "2015년 세계적 바텐더 대회 우승자이자 서울의 바 오너 바텐더", "신문 기사로 소개됨"]],
+  foodpr:[["이하연", "전통식품명인으로 김치 회사를 운영하며 사라진 해물섞박지를 되살림", "책 『김치명인 이하연의 별별김치』(한국외식정보, 2025.10)"]],
+  drone:[["이원영", "드론 회사 대표로 농업 방제 드론으로 여름 석 달에 3천만 원 넘게 벌었다고 밝힘", "신문 기사로 소개됨"], ["박근호", "청년 드론 방제단을 만들어 홍천 대부분 지역의 방제를 맡고 농업경영인상을 받음", "신문 기사로 소개됨"]],
+  mush:[["이남주", "1979년부터 버섯을 재배해 느타리 봉지재배법을 처음 개발한 농업기술명인, 버섯 농장을 운영하며 재배 교육", "신문 기사로 소개됨"]],
+  webd:[["최성일", "웹디자인·퍼블리싱에서 개발로 넘어가 IT 직업훈련기관을 운영", "책 『Do it! 인터랙티브 웹 페이지 만들기』(이지스퍼블리싱, 2021.08)"], ["홍진아", "미대 교수 출신 디자인 전문가로 웹디자인개발기능사 수험서를 쓰고 무료 강의를 올림", "책 『유선배 웹디자인개발기능사 필기 합격노트』(시대고시기획, 2026.01) / 유튜브 「미대교수」"]],
+  lift:[["김기영", "공고를 나와 엘리베이터 일을 시작해 1994년 특수엘리베이터 회사를 창업, 매출 수십억 원대로 키움", "신문 기사로 소개됨"]],
+  gas:[["홍경표 (홍까스)", "가스기능사 등 자격을 갖고 시험 감독위원과 산업현장 교수로 일하는 가스 강사", "책 『홍까스와 함께하는 가스기능사 실기』(에듀피디, 2024.01) / 유튜브 「홍까스」"]],
+  haz:[["여승훈", "위험물학원 원장 출신으로 소방학교·기업에서 강의하는 위험물 전문 강사", "책 『한번에 합격하는 위험물기능사 실기』(성안당, 2025.01, 공저) / 유튜브 「여승훈」"], ["정진홍", "위험물기능사 수험서 저자로 수험생 질문 카페 운영", "책 『평생 무료 동영상과 함께하는 위험물기능사 필기+실기』(세진북스, 2025.01, 공저)"]],
+  laundry:[["설재원", "10년 넘게 세탁소를 운영하다 세탁 전문 유튜버가 됨", "책 『세탁 살림 백과』(황금부엉이, 2021.03) / 유튜브 「세탁설」"], ["한현숙·박기문", "30년 경력 세탁 전문가 부부로 세탁 노하우를 책과 유튜브로 알림", "책 『세탁하기 좋은 날』(보누스, 2022.04) / 유튜브 「세탁하기좋은날」"], ["김정남", "20년 가까이 패딩 전문 세탁소를 운영", "유튜브 「거성세탁소」"]],
+  retail:[["유정례", "주부에서 편의점 경영주가 되어 점포를 최대 17개까지 운영", "책 『편의점 하길 참 잘했다』(문학바탕, 2019.12, 절판)"], ["김용운", "대형마트 일반 직원에서 점장까지 올라 여러 점포에서 매출 1위를 냄", "책 『김점장의 일등마트 도전기』(바른북스, 2025.07)"], ["봉달호", "가족을 돕다 편의점 점주가 되어 '글 쓰는 편의점주'로 칼럼과 책을 냄", "책 『매일 갑니다, 편의점』(시공사, 2018.09)"]]
+};
+/* 범죄 유형별 취업 제한 — 결과지에는 범죄 유형 이름을 인쇄하지 않음 */
+const CRIMES = {
+  sex:{n:"성범죄",g:"법원이 취업제한명령을 선고했다면 정해진 기간(최대 10년) 동안 학교·학원·체육시설·의료기관 등 아동·청소년 관련기관과 장애인 복지시설 등에 취업할 수 없습니다. 택시·화물 운송 자격도 일정 기간 제한될 수 있습니다. 판결문에서 명령 여부와 기간을 확인하세요."},
+  abuse:{n:"아동·노인 학대",g:"아동 관련기관 또는 노인 관련기관(요양시설 등)에 일정 기간 취업이 제한될 수 있습니다."},
+  drug:{n:"마약류 범죄",g:"택시·화물 운송 자격은 일정 기간 취득할 수 없고, 요양보호사·반려동물행동지도사 등은 마약류 중독자를 결격사유로 둡니다. 경비원도 결격 여부를 확인해야 합니다."},
+  violent:{n:"폭력·강력 범죄",g:"살인·강도 등 강력범죄는 택시·화물 운송 자격이 일정 기간 제한되고, 경비원도 결격사유에 해당할 수 있습니다."},
+  traffic:{n:"음주운전 등 교통 범죄",g:"운전면허가 취소됐다면 일정 기간 다시 딸 수 없고, 운전 관련 직업 자격에도 영향이 있습니다."},
+  property:{n:"절도·사기 등 재산 범죄",g:"경비원 등 일부 직업에 결격사유가 있고, 돈을 다루는 회계·금융 직종은 채용 과정에서 불리할 수 있습니다."},
+  any:{n:"그 밖의 범죄 (금고 이상 실형)",g:"요양보호사·사회복지사 등 일부 국가자격은 금고 이상의 실형을 받은 경우 집행이 끝난 뒤 일정 기간 결격사유가 됩니다."}
+};
+/* ===== 검정고시 (2026년 서울·경기 교육청 시행계획 기준, 2026년 10월 확인) ===== */
+const GED = {
+  el:["초졸 검정고시",[["응시 자격","시험 전년도 기준 만 11세 이상이고 초등학교를 마치지 못한 사람 (초등학교 재학생은 응시 불가)"],["필수 과목","국어, 수학, 사회, 과학 (4과목)"],["선택 과목","도덕, 체육, 음악, 미술, 실과, 영어 중 2과목"],["문항·시간","과목당 20문항(문항당 5점), 2과목씩 묶어 교시당 40분"]],2],
+  mid:["중졸 검정고시",[["응시 자격","나이 제한 없음. 초등학교 졸업자 또는 초졸 검정고시 합격자 (중학교를 그만둔 경우 공고일 전에 정원외 관리 처리가 되어 있어야 함)"],["필수 과목","국어, 수학, 영어, 사회, 과학 (5과목)"],["선택 과목","도덕, 기술·가정, 체육, 음악, 미술, 정보 중 1과목"],["문항·시간","과목당 25문항(수학은 20문항), 국어·수학·영어 40분, 나머지 30분"]],2],
+  high:["고졸 검정고시",[["응시 자격","중학교 졸업자 또는 중졸 검정고시 합격자. 고등학교 재학생·졸업자는 응시 불가, 고교를 그만둔 날부터 공고일까지 6개월이 지나야 함"],["필수 과목","국어, 수학, 영어, 사회, 과학, 한국사 (6과목)"],["선택 과목","도덕, 기술·가정, 체육, 음악, 미술 중 1과목"],["문항·시간","과목당 25문항(수학은 20문항), 국어·수학·영어 40분, 나머지 30분"]],3]
+};
+const GED_COMMON = ["1년에 2회: 1회는 2월 공고·4월 시험, 2회는 6월 공고·8월 시험 (정확한 날짜는 교육청 공고 확인)","합격: 전 과목 평균 60점 이상 (과목별 최저점, 즉 과락은 없음). 결시한 과목이 있으면 안 됩니다","과목합격: 60점 이상 받은 과목은 다음 시험부터 면제받을 수 있어 몇 과목씩 나눠 합격해도 됩니다","출제: 2015 개정 교육과정 교과서 범위, 모두 4지선다 객관식","수용 중: 교정시설 검정고시반에서 공부하고 응시할 수 있습니다. 선발 기준과 시험 장소는 교육 담당에게 확인하세요"];
+const GED_STEPS = {e0:["el","mid","high"],e1:["mid","high"],e1b:["mid","high"],e2:["high"],e2b:["high"]};
+/* ===== 대학 진학 경로: [이름, 한 줄 설명, 안내처, [[항목, 내용]...]] (2026년 10월 확인) ===== */
+const UNIV = {
+  knou:["한국방송통신대학교","고졸 학력(고졸 검정고시 포함)이면 지원하는 국립 원격대학입니다. 필기시험 없이 고교·검정고시 성적으로 뽑습니다.","입학 문의 1577-2853, knou.ac.kr",[["모집 시기","1학기: 12월 초~1월 초 / 2학기: 6월 초~7월 초"],["기간·비용","4년(학사). 수업료는 학기당 약 34만~38만 원 (2026년 1학기, 학과마다 다름)"],["편입","학점은행제 30학점 이상이면 2학년, 63학점 이상이면 3학년 편입 지원 가능"],["수용 중","여주·전주·청주여자·포항교도소 등에서 방송대 과정 운영 (강의 영상을 내려받아 제공). 선발 여부는 교육 담당에게 문의"]]],
+  cb:["학점은행제","수업과 자격증 등으로 학점을 쌓아 학위를 받습니다. 출소 후 일하면서 병행하기 좋습니다.","국가평생교육진흥원 cb.or.kr",[["학위 요건","학사 140학점(전공 60·교양 30), 전문학사 2년제 80학점(전공 45·교양 15)"],["자격증 학점","기사 20, 산업기사 16, 기능장 30학점. 기능사는 학점으로 인정되지 않습니다"],["비용","학습자 등록 4,000원, 학점인정 신청 1학점당 1,000원 (기초생활수급자 면제). 수업료는 교육기관마다 다름"],["한도","수업 학점은 1년에 최대 42학점까지 인정"]]],
+  bsd:["독학학위제","4단계 시험에 모두 합격하면 학사학위를 받습니다. 혼자 공부하는 방식입니다.","국가평생교육진흥원 bdes.nile.or.kr",[["4단계","1과정 교양 → 2과정 전공기초 → 3과정 전공심화 → 4과정 학위취득 종합시험. 각 과정은 1년에 한 번 시험"],["합격","1~3과정은 과목별 60점 이상이면 그 과목 합격, 4과정은 총점 60% 이상 등"],["전공","국어국문, 영어영문, 심리, 경영, 법, 행정, 유아교육, 가정, 컴퓨터공학, 정보통신, 간호 (11개)"],["수용 중","교정시설 '학사고시반'(9개 전공)이 있습니다. 운영 시설은 교육 담당에게 문의"]]],
+  cyber:["사이버대학","온라인 수업으로 학위를 받습니다. 생계와 병행하기 쉽습니다.","한국원격대학협의회(kcou.org), 각 대학 입학처",[["입학 자격","고졸 또는 고졸 검정고시 합격. 33학점 이상이면 2학년, 66학점 이상이면 3학년 편입"],["모집 시기","상반기 12월~1월, 하반기 6월~7월"],["비용","학교마다 다르니 입학처에 확인"]]],
+  poly:["한국폴리텍대학·전문대학","2년 동안 기술을 배우고 학위(산업학사·전문학사)를 받습니다. 취업과 바로 이어집니다.","한국폴리텍대학 ipsi.kopo.ac.kr, 각 전문대학 입학처",[["입학 자격","고졸 또는 같은 학력 (고졸 검정고시 포함)"],["모집 시기","수시1차 9월, 수시2차 11월, 정시 1월"],["비용","폴리텍 학기당 약 130만 원 안팎, 기숙사 있는 캠퍼스 많음"],["전형","만 25세 이상 성인학습자 전형(정원 외), 기초생활수급자 등 기회균형 전형이 있습니다"],["수용 중","순천교도소에서 전문대학 위탁교육(바리스타·외식조리) 운영"]]],
+  reg:["일반 대학","수능 성적으로 지원하는 정시, 검정고시 출신도 지원할 수 있는 수시(학생부종합·논술 등)가 있습니다.","대입정보포털 adiga.kr",[["수능","매년 11월. 검정고시 합격자는 주소지 교육지원청에 8월 말~9월 초에 원서 접수 (기초생활수급자 응시료 면제 신청 가능)"],["수시","검정고시 점수 반영 방식은 대학마다 다르니 모집요강 확인"]]]
+};
+const EDU_INSIDE = "교정시설 안에서: 검정고시반(초·중·고), 방송통신고(소년, 김천소년교도소), 독학학위 학사고시반, 방송대 과정, 전문대학 위탁교육이 있습니다. 선발은 나이·학력·과정별 요건을 보고 정하니 교육 담당에게 신청하세요.";
+const EDU = [["e0","초등학교 미졸업"],["e1","초등학교 졸업"],["e1b","중학교 중퇴"],["e2","중학교 졸업"],["e2b","고등학교 중퇴"],["e3","고등학교 졸업"],["e4","대학 중퇴"],["e5","대학 졸업 이상"]];
+const WORRY = [["w9","학교로 돌아가고 싶다","study","y"],["w1","빨리 돈을 벌어야 한다","job"],["w2","기술을 배우고 싶다","job"],["w3","자격증을 따고 싶다","job"],["w4","가족 부양이 걱정된다","job","a"],["w5","하고 싶은 일이 있다","job"],["w6","학력을 높이고 싶다","study"],["w7","대학에 가고 싶다","study"],["w8","무엇을 해야 할지 모르겠다",""],["w10","가족과 다시 지낼 수 있을지 걱정된다","","y"]];
+
+/* ===== 상태와 흐름 ===== */
+const $ = id => document.getElementById(id);
+/* ===== 직업 흥미 탐색 (홀랜드 RIASEC 이론 기반 간이 체크) — 표준화 검사가 아님 ===== */
+const HOL = {
+  R:{n:"현실형",d:"손과 몸, 도구나 기계를 써서 눈에 보이는 결과물을 만드는 일을 좋아합니다.",f:"기술·제조, 건설, 운전, 조경"},
+  I:{n:"탐구형",d:"원리를 따져 보고 문제의 원인을 찾아 해결하는 일을 좋아합니다.",f:"IT, 전기, 정비 진단"},
+  A:{n:"예술형",d:"자기 방식대로 표현하고 보기 좋게 만드는 일을 좋아합니다.",f:"미용, 제과·제빵, 꽃, 인테리어"},
+  S:{n:"사회형",d:"사람을 돕고 돌보고 가르치는 일을 좋아합니다.",f:"돌봄·복지, 서비스, 반려동물 교육"},
+  E:{n:"진취형",d:"앞장서서 이끌고 설득하며 내 일을 꾸려가는 것을 좋아합니다.",f:"판매·영업, 매장 운영, 창업"},
+  C:{n:"관습형",d:"정해진 방법에 따라 정확하고 꼼꼼하게 처리하는 일을 좋아합니다.",f:"사무, 회계, 물류, 시설관리"}
+};
+const HOL_ORDER="RIASEC".split("");
+/* 화면 5개 × 유형별 1문항 */
+const HOL_Q = [
+  {R:"고장 난 물건 고치기",I:"어떤 일이 왜 그렇게 되는지 원리 알아보기",A:"그림 그리기나 물건 꾸미기",S:"다른 사람의 고민 들어주기",E:"여러 사람 앞에서 내 의견 말하기",C:"서류나 물건을 종류별로 정리하기"},
+  {S:"아이나 어르신 돌보기",C:"돈 계산하고 장부 적기",R:"공구나 기계 다루기",E:"모임이나 팀을 이끌기",I:"퍼즐이나 수수께끼 풀기",A:"노래하거나 악기 연주하기"},
+  {E:"물건을 팔거나 사람을 설득하기",A:"글이나 이야기 쓰기",I:"과학·자연 다큐멘터리 보기",C:"정해진 규칙대로 꼼꼼하게 일하기",R:"밖에서 몸을 움직여 일하기",S:"모르는 사람에게 친절하게 설명해 주기"},
+  {I:"문제가 생기면 원인을 끝까지 찾아내기",R:"나무나 쇠로 물건 만들기",C:"컴퓨터에 자료를 입력하고 정리하기",S:"봉사활동 하기",A:"요리나 옷차림을 내 방식대로 꾸미기",E:"내 가게를 차려 운영하기"},
+  {A:"사진 찍기나 영상 만들기",E:"일을 계획하고 사람들에게 나눠 맡기기",S:"아프거나 힘든 사람·동물 돌보기",R:"자동차나 장비 운전하기",C:"일정표나 목록을 만들어 관리하기",I:"새로운 것을 조사하고 공부하기"}
+];
+/* 직업별 흥미 코드 */
+const JOB_HOL = {carpaint:"RA",cmech:"RI",elecfix:"RI",bpaint:"R",waterp:"R",rebar:"R",scaff:"R",furn:"RA",foodpr:"RC",bartender:"SE",drone:"RI",mush:"RI",webd:"AC",lift:"RI",gas:"RC",haz:"RC",laundry:"RC",retail:"EC",weld:"R",elec:"RI",car:"RI",pipe:"R",paper:"RA",tile:"RA",wood:"RA",excav:"R",cook:"RA",bake:"AR",barista:"ES",hair:"AS",barber:"AS",truck:"RC",taxi:"RS",forklift:"RC",carer:"SR",social:"SE",dog:"RS",petgroom:"AR",landscape:"R",flower:"AR",comp:"C",acct:"C",it:"IC",hvac:"RI",fire:"RC",guard:"RC"};
+const holDone = () => S.hol==="yes";
+function holScore(){ const s={}; HOL_ORDER.forEach(t=>s[t]=0); [S.h1,S.h2,S.h3,S.h4,S.h5].forEach(a=>a.forEach(t=>s[t]++)); return s; }
+function holTop(){ const s=holScore(); const r=[...HOL_ORDER].sort((a,b)=>s[b]-s[a]); return s[r[0]]===0?[]:r.filter(t=>s[t]>0&&s[t]>=s[r[1]]).slice(0,s[r[1]]===s[r[2]]?3:2); }
+function holJobs(){
+  if(!holDone()) return [];
+  const s=holScore();
+  return Object.keys(JOBS).map(k=>{const c=JOB_HOL[k]; return [k,s[c[0]]*2+(c[1]?s[c[1]]:s[c[0]])];})
+    .filter(x=>x[1]>=4).sort((a,b)=>b[1]-a[1]).slice(0,6).map(x=>x[0]);
+}
+/* ===== 흥미 유형별 학과·학교 (각 기관 누리집 2026년 10월 확인, 학과명은 해마다 바뀔 수 있음) =====
+   [어울리는 학과, 방송대, 폴리텍(캠퍼스별 학과명이 다름), 사이버대, 학점은행제, 한 줄 안내] */
+const HOL_MAJ = {
+  R:["기계공학, 전기공학, 자동차공학, 건축공학, 전자공학","농학과, 컴퓨터과학과, 보건환경안전학과","서울정수캠퍼스 미래형자동차과·전기공학과·기계설계과","서울사이버대 기계제어공학과·전기전자공학과, 한양사이버대 자동차IT융합공학과","전기공학 전공(학사), 자동차정비 전공(전문학사)","폴리텍 2년 과정을 마치고 산업기사 자격증까지 따는 길이 가장 현실적입니다."],
+  I:["컴퓨터공학(인공지능·데이터), 통계학, 경제학, 생명과학, 심리학","통계·데이터과학과, 컴퓨터과학과, 경제학과","서울강서캠퍼스 빅데이터소프트웨어공학과, 서울정수캠퍼스 인공지능소프트웨어과","서울사이버대 응용수학·통계학과, 심리학과, 인공지능학과","인공지능 전공, 생명과학 전공(학사)","혼자 파고드는 공부가 잘 맞아 방송대·사이버대·독학학위제에 어울립니다."],
+  A:["시각디자인, 산업디자인, 패션디자인, 실용음악, 문예창작, 방송영상","미디어영상학과, 국어국문학과, 문화교양학과","서울정수캠퍼스 시각디자인과, 서울강서캠퍼스 패션디자인과·주얼리디자인과","서울사이버대 멀티미디어디자인학과·문예창작학과·실용음악과, 한양사이버대 시각디자인학과","시각디자인학 전공(학사), 실용음악 전공(전문학사)","학력보다 작품(포트폴리오)이 실력을 보여 주는 분야입니다."],
+  S:["사회복지학, 상담심리학, 교육학, 아동·청소년학, 보건행정학","사회복지학과, 청소년교육복지상담학과, 생활체육지도과","(맞는 학과가 적음)","서울사이버대 상담심리학과·직업·진로상담학과, 한양사이버대 사회복지학과","사회복지학 전공, 상담학 전공(학사)","사회복지사·보육교사·교사·간호사 등은 법에 결격사유가 있어 범죄경력에 따라 자격을 받지 못하거나 일정 기간 제한될 수 있습니다. 진학 전에 꼭 확인하세요."],
+  E:["경영학, 무역학, 관광경영학, 광고·미디어학, 부동산학","경영학과, 무역학과, 도시콘텐츠·관광학과","(맞는 학과가 적음)","서울사이버대 경영학과·AI커머스학과·부동산학과, 한양사이버대 호텔외식경영학과","경영학 전공, 관광경영학 전공(학사)","창업·영업·매장 운영과 바로 이어지는 공부입니다."],
+  C:["회계학, 세무학, 행정학, 금융보험학, 문헌정보학","행정학과, 법학과, 통계·데이터과학과","서울강서캠퍼스 보건의료정보과","서울사이버대 세무회계학과·법무행정학과, 한양사이버대 재무·회계·세무학과","회계학 전공, 세무학 전공(학사)","전산회계·전산세무 자격증과 함께 준비하면 좋습니다."]
+};
+function holMajors(){
+  const top=holTop(); if(!top.length) return "";
+  return `<h4>흥미 유형에 어울리는 학과와 학교</h4>${top.map(t=>{const m=HOL_MAJ[t]; return `<div class="cert"><b>${HOL[t].n}</b><dl class="wide"><dt>어울리는 학과</dt><dd>${m[0]}</dd><dt>방송대</dt><dd>${m[1]}</dd><dt>폴리텍</dt><dd>${m[2]}</dd><dt>사이버대</dt><dd>${m[3]}</dd><dt>학점은행제</dt><dd>${m[4]}</dd></dl><small>${m[5]}</small></div>`;}).join("")}<p><small>학과 연결은 직업흥미검사 학과표를 참고한 예시입니다. 폴리텍 학과는 캠퍼스마다 다르니 가까운 캠퍼스에서 비슷한 학과를 찾아보세요. 학과명과 모집 여부는 해마다 바뀔 수 있습니다.</small></p>`;
+}
+function holBars(){
+  const s=holScore();
+  return `<div class="hbars">${HOL_ORDER.map(t=>`<div class="hb"><span>${HOL[t].n}</span><div class="bar"><i style="width:${s[t]*20}%"></i></div><b>${s[t]}/5</b></div>`).join("")}</div>`;
+}
+function holSummary(){
+  const top=holTop();
+  if(!top.length) return `<p>고른 활동이 없어 흥미 유형을 정하지 못했습니다. 상담 직원과 이야기하며 다시 찾아보세요.</p>`;
+  return `<p><b>나의 흥미 유형: ${top.map(t=>HOL[t].n).join(" · ")}</b></p><ul>${top.map(t=>`<li><b>${HOL[t].n}</b> ${HOL[t].d} <small>(어울리는 분야: ${HOL[t].f})</small></li>`).join("")}</ul>`;
+}
+/* ===== 지역별 출소 후 지원기관 (한국법무보호복지공단 누리집 교육원/지부 소개, 2026년 10월 확인) ===== */
+const KOREHA = {
+  "서울":[["서울지부","양천구 지양로 137","02-2605-3427"],["서울동부지부","송파구 오금로 509","02-3401-7046"],["서울서부지부","은평구 갈현로7길 5-14","02-385-3091"],["서울북부지부","도봉구 방학로8길 33","02-954-0657"],["서울동부기술교육원","송파구 오금로 509","02-6952-5181"]],
+  "부산":[["부산지부","사하구 낙동대로 640","051-294-1385"]],
+  "대구":[["대구지부","달서구 달구벌대로 1378, 3층","053-583-7965"]],
+  "인천":[["인천지부","서해구 서곶로 323, 3층","032-564-3858"],["인천기술교육원","서구 심곡로 86","032-561-6163"]],
+  "광주":[["광주지부","북구 동운로52번길 18","062-531-5731"],["광주남부지부","서구 월드컵4강로71번길 20","062-383-2751"]],
+  "대전":[["대전지부","중구 대둔산로350번길 19","042-581-0705"]],
+  "울산":[["울산지부","남구 돋질로 450","052-256-6960"],["울산기술교육원","남구 돋질로 450","052-249-4121"]],
+  "세종":[["대전지부 (세종 인근)","대전 중구 대둔산로350번길 19","042-581-0705"]],
+  "경기":[["경기지부","수원시 장안구 천천로 126","031-271-6189"],["경기남부지부","화성시 병점중앙로 154","031-232-5074"],["경기북부지부","의정부시 입석로 45","031-872-5183"],["경기동부지부","광주시 경충대로184번길 7-8","031-245-2653"]],
+  "강원":[["강원지부","춘천시 영서로 2953","033-242-5635"],["강원동부지부","강릉시 옥가로 56","033-647-3185"],["원주허그상담소","원주시 북원로 2551, 3층","033-742-8652"]],
+  "충북":[["충북지부","청주시 서원구 청남로1847번길 118","043-291-8329"]],
+  "충남":[["충남지부","홍성군 홍북읍 충서로2376번길 30","041-631-6750"],["충남기술교육원","홍성군 홍북읍 충서로2376번길 30","041-630-0800"],["천안허그상담소","천안시 서북구 서부5길 15, 3층","041-904-1011"]],
+  "전북":[["전북지부","전주시 완산구 쑥고개옛길 127-4","063-229-8140"],["전북기술교육원","전주시 완산구 쑥고개옛길 127-4","063-222-1560"]],
+  "전남":[["전남동부지부","여수시 만성로 210-30","061-655-6825"],["광주지부 (전남 서부 인근)","광주 북구 동운로52번길 18","062-531-5731"]],
+  "경북":[["경북지부","예천군 호명읍 봉호로 4057","054-652-6380"],["경북서부지부","구미시 형곡로22길 5-12","054-456-7689"],["경북기술교육원","예천군 호명읍 봉호로 4057","054-716-1661"]],
+  "경남":[["경남지부","창원시 의창구 동읍 의창대로 918","055-293-4465"],["경남서부지부","진주시 석갑로 135","055-744-6410"],["경남기술교육원","창원시 의창구 동읍 의창대로 918","055-291-7735"],["통영허그상담소","통영시 광도면 죽림4로 8, 2층","055-646-2888"]],
+  "제주":[["제주지부","제주시 기자길 70","064-759-8733"]]
+};
+const techEdu = r => (KOREHA[r]||[]).filter(x=>x[0].includes("기술교육원"));
+const esc = s => String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const stars = n => `<span class="stars">${"★".repeat(n)}${"☆".repeat(5-n)}</span>`;
+const josa = w => { const c=w.charCodeAt(w.length-1); return (c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28)?"이":"가"; };
+/* ===== 익명 기록: 이름·수번·범죄 유형·직접 입력 글은 저장하지 않음. 이 기기의 브라우저 안에만 저장 ===== */
+const DB_KEY="jinro_records_v1", CFG_KEY="jinro_cfg_v1";
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
+  ok(){ try{ localStorage.setItem("_t","1"); localStorage.removeItem("_t"); return true; }catch(e){ return false; } }
+};
+const cfg = () => store.get(CFG_KEY,{on:true,pin:""});
+let SID = "";
+const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const COLS = ["날짜","구분","출소 예정","지역","학력","진로 고민","진로 방향","흥미 탐색","흥미 유형","현실형","탐구형","예술형","사회형","진취형","관습형","관심 분야","희망 직업","준비 자격증","학업 목표","진학 경로"];
+function makeRecord(){
+  const hs=holDone()?holScore():null, top=holDone()?holTop():[];
+  const goalName={school:"학교 복학",ged:"검정고시",univ:"대학 진학",both:"검정고시+대학"}[S.goal]||"";
+  return [today(), youth()?"소년":"성인", S.release, S.region, (EDU.find(e=>e[0]===S.edu)||[,""])[1],
+    S.worries.map(w=>WORRY.find(x=>x[0]===w)[1]).join(" / "),
+    ({job:"취업",study:"학업",both:"취업+학업"})[S.dir]||"",
+    holDone()?"함":"안 함", top.map(t=>HOL[t].n).join(" / "),
+    ...HOL_ORDER.map(t=>hs?hs[t]:""),
+    wantJob()?CATS.filter(c=>S.cats.includes(c.id)).map(c=>c.n).join(" / "):"",
+    wantJob()?(S.job==="etc"?"목록 외 직업":(JOBS[S.job]||{}).n||""):"",
+    wantJob()&&JOBS[S.job]?S.certs.map(k=>CERT[k][0]).join(" / "):"",
+    wantStudy()?goalName:"", wantStudy()&&wantUniv()?S.univ.map(k=>UNIV[k][0]).join(" / "):""];
+}
+/* 결과지에 도달할 때 저장. 같은 회차에서 다시 고치면 덮어씀 */
+function saveRecord(){
+  if(!cfg().on || !store.ok()) return;
+  if(!SID) SID=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const db=store.get(DB_KEY,[]), i=db.findIndex(r=>r.id===SID), rec={id:SID,v:makeRecord()};
+  i<0?db.push(rec):db[i]=rec; store.set(DB_KEY,db);
+}
+function toCSV(db){
+  const q=x=>`"${String(x).replace(/"/g,'""')}"`;
+  return "\uFEFF"+[COLS,...db.map(r=>r.v)].map(r=>r.map(q).join(",")).join("\r\n");
+}
+function download(){
+  const db=store.get(DB_KEY,[]); if(!db.length) return;
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([toCSV(db)],{type:"text/csv;charset=utf-8"}));
+  a.download=`진로설계_기록_${today()}.csv`; document.body.appendChild(a); a.click(); a.remove();
+}
+function countBy(db,col,split){
+  const m={}; db.forEach(r=>{ const v=r.v[COLS.indexOf(col)]; (split?String(v).split(" / "):[v]).filter(Boolean).forEach(x=>m[x]=(m[x]||0)+1); });
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function statBox(db,title,col,split,n=6){
+  const c=countBy(db,col,split).slice(0,n); if(!c.length) return "";
+  const max=c[0][1];
+  return `<div class="stat"><h4>${title}</h4>${c.map(([k,v])=>`<div class="hb wide"><span>${k}</span><div class="bar"><i style="width:${v/max*100}%"></i></div><b>${v}</b></div>`).join("")}</div>`;
+}
+function modal(html,setup){
+  const m=document.createElement("div"); m.className="modal no-print";
+  m.innerHTML=`<div class="box" role="dialog" aria-modal="true">${html}</div>`;
+  document.body.appendChild(m); m.onclick=e=>{ if(e.target===m) m.remove(); };
+  setup(m, ()=>m.remove());
+}
+function adminLogin(){
+  if(!store.ok()){ modal(`<h2>기록을 쓸 수 없습니다</h2><p>이 브라우저에서는 저장 기능이 막혀 있습니다. 파일을 Chrome으로 직접 열어 주세요.</p><div class="nav"><span></span><button class="go" id="mOk">확인</button></div>`,(m,c)=>m.querySelector("#mOk").onclick=c); return; }
+  const c0=cfg(), first=!c0.pin;
+  modal(`<h2>${first?"관리자 비밀번호 만들기":"관리자 확인"}</h2><p>${first?"숫자 4자리 이상으로 정해 주세요. 수형자가 기록을 보거나 지우지 못하게 합니다.":"비밀번호를 입력하세요."}</p>
+    <input type="password" inputmode="numeric" id="p1" placeholder="비밀번호" style="margin-top:14px">${first?`<input type="password" inputmode="numeric" id="p2" placeholder="한 번 더" style="margin-top:8px">`:""}
+    <p id="pe" style="color:var(--warn);min-height:1.5em;margin-top:6px"></p><div class="nav"><button id="mNo">취소</button><button class="go" id="mYes">확인</button></div>`,(m,close)=>{
+    const p1=m.querySelector("#p1"); p1.focus();
+    const ok=()=>{ const v=p1.value.trim(), e=m.querySelector("#pe");
+      if(first){ if(!/^\d{4,}$/.test(v)){e.textContent="숫자 4자리 이상으로 입력하세요.";return;} if(v!==m.querySelector("#p2").value.trim()){e.textContent="두 번 입력한 값이 다릅니다.";return;} store.set(CFG_KEY,{...c0,pin:v}); }
+      else if(v!==c0.pin){ e.textContent="비밀번호가 다릅니다."; p1.value=""; return; }
+      close(); cur="admin"; render(); };
+    m.querySelector("#mYes").onclick=ok; m.querySelector("#mNo").onclick=close;
+    m.querySelectorAll("input").forEach(x=>x.onkeydown=e=>{ if(e.key==="Enter") ok(); });
+  });
+}
+function renderAdmin(){
+  const db=store.get(DB_KEY,[]), c=cfg();
+  const days=[...new Set(db.map(r=>r.v[0]))].sort();
+  app.innerHTML=`<div class="topbar"><p class="step">관리자</p><button class="homebtn" id="out">나가기</button></div>
+  <h1>익명 기록 모음</h1><p class="lead">이 기기에 저장된 기록입니다. 이름·수번·범죄 유형·직접 적은 글은 저장하지 않습니다.</p>
+  <div class="kpis"><div><b>${db.length}</b><span>전체 기록</span></div><div><b>${countBy(db,"구분").find(x=>x[0]==="성인")?.[1]||0} / ${countBy(db,"구분").find(x=>x[0]==="소년")?.[1]||0}</b><span>성인 / 소년</span></div><div><b>${days.length?days[0].slice(5)+" ~ "+days[days.length-1].slice(5):"-"}</b><span>기간</span></div></div>
+  ${db.length?`<div class="stats">${statBox(db,"흥미 유형 (상위)","흥미 유형",true)}${statBox(db,"희망 직업","희망 직업",false,8)}${statBox(db,"진로 고민","진로 고민",true,8)}${statBox(db,"관심 분야","관심 분야",true)}${statBox(db,"진로 방향","진로 방향")}${statBox(db,"생활 지역","지역")}</div>`:`<p class="note">아직 기록이 없습니다. 상담을 끝까지 진행해 결과지 화면이 나오면 1건이 저장됩니다.</p>`}
+  <div class="admin-actions">
+    <button class="go" id="dl"${db.length?"":" disabled"}>엑셀(CSV)로 내려받기</button>
+    <label class="switch"><input type="checkbox" id="onoff"${c.on?" checked":""}> 기록 저장 ${c.on?"켜짐":"꺼짐"}</label>
+    <button id="pin">비밀번호 바꾸기</button>
+    <button id="wipe" class="danger"${db.length?"":" disabled"}>기록 모두 지우기</button>
+  </div>
+  <p class="lead" style="margin-top:18px;font-size:14px">기록은 이 기기의 브라우저 안에만 있습니다. 브라우저 데이터를 지우거나 다른 기기·브라우저에서 열면 보이지 않으니, 주기적으로 내려받아 보관하세요.</p>`;
+  $("out").onclick=()=>{ cur="start"; render(); };
+  $("dl").onclick=download;
+  $("onoff").onchange=e=>{ store.set(CFG_KEY,{...cfg(),on:e.target.checked}); renderAdmin(); };
+  $("pin").onclick=()=>{ store.set(CFG_KEY,{...cfg(),pin:""}); adminLogin(); };
+  $("wipe").onclick=()=>modal(`<h2>기록을 모두 지울까요?</h2><p>${db.length}건이 지워지며 되돌릴 수 없습니다. 먼저 내려받았는지 확인하세요.</p><div class="nav"><button id="mNo">취소</button><button class="go danger" id="mYes">모두 지우기</button></div>`,(m,close)=>{ m.querySelector("#mNo").onclick=close; m.querySelector("#mYes").onclick=()=>{ store.set(DB_KEY,[]); close(); renderAdmin(); }; });
+}
+let NONE={}, S, cur;
+function reset(){ NONE={}; SID=""; S={who:"",release:"",region:"",edu:"",worries:[],dir:"",crimes:[],cats:[],job:"",jobEtc:"",certs:[],goal:"",univ:[],hol:"",h1:[],h2:[],h3:[],h4:[],h5:[]}; cur="start"; render(); }
+const lowEdu = () => ["e0","e1","e1b","e2","e2b"].includes(S.edu);
+const youth = () => S.who==="youth";
+const gedLevel = () => ({e0:"el",e1:"mid",e1b:"mid"})[S.edu] || "high";
+const wantJob = () => S.dir==="job"||S.dir==="both";
+const wantStudy = () => S.dir==="study"||S.dir==="both";
+const wantGed = () => wantStudy() && lowEdu() && (S.goal==="ged"||S.goal==="both");
+const wantUniv = () => wantStudy() && (!lowEdu() || S.goal==="univ"||S.goal==="both");
+const AGE={truck:20,taxi:20,guard:18,dog:18,excav:18,forklift:18};
+const ageNote = k => youth()&&AGE[k] ? `만 ${AGE[k]}세 이상 취득 가능` : "";
+const hits = k => (JOBS[k].lim||[]).filter(c=>S.crimes.includes(c));
+function flow(){
+  const f=["start","who","release","region","edu","worry","dir","holAsk"];
+  if(holDone()) f.push("h1","h2","h3","h4","h5","hres");
+  if(wantJob()){ f.push("crime","cat","job"); if(S.job==="etc") f.push("jobEtc"); else if(S.job) f.push("cert"); }
+  if(wantStudy()){ if(lowEdu()) f.push("goal"); if(wantUniv()) f.push("univ"); }
+  f.push("result"); return f;
+}
+const topbar = label => `<div class="topbar"><p class="step">${label}</p><button class="homebtn" id="home">처음으로</button></div>`;
+const bottom = ok => `<div class="nav"><button id="back">이전</button><button class="go" id="next"${ok?"":" disabled"}>다음</button></div>`;
+function bind(before){ $("back").onclick=()=>go(-1); $("home").onclick=home; $("next").onclick=()=>{ if(before) before(); go(1); }; }
+function home(){
+  const m=document.createElement("div"); m.className="modal no-print";
+  m.innerHTML=`<div class="box" role="dialog" aria-modal="true"><h2>처음 화면으로 갈까요?</h2><p>지금까지 고른 내용이 모두 지워집니다.</p><div class="nav"><button id="mNo">계속 진행</button><button class="go" id="mYes">처음으로</button></div></div>`;
+  document.body.appendChild(m);
+  const close=()=>m.remove();
+  m.querySelector("#mNo").onclick=close; m.onclick=e=>{ if(e.target===m) close(); };
+  m.querySelector("#mYes").onclick=()=>{ close(); reset(); window.scrollTo(0,0); };
+  m.querySelector("#mYes").focus();
+}
+function go(d){ const f=flow(); cur=f[f.indexOf(cur)+d]||cur; render(); window.scrollTo(0,0); }
+function recDir(){
+  const t=S.worries.map(w=>WORRY.find(x=>x[0]===w)[2]);
+  const j=t.includes("job"), s=t.includes("study");
+  return j&&s?"both":j?"job":s?"study":"";
+}
+/* 화면: [제목, 설명, single|multi, 저장 키, 선택지, 배치] */
+function screen(){
+  switch(cur){
+    case "who": return ["상담 대상은 누구인가요?","대상에 맞춰 진로 고민, 학업 경로, 지원기관을 다르게 안내합니다.","single","who",[{v:"adult",b:"성인 수형자",s:"만 19세 이상"},{v:"youth",b:"소년 수형자",s:"만 19세 미만 · 복학, 학교 밖 청소년 지원 포함"}],"one"];
+    case "release": return ["출소 예정 시기는 언제인가요?","남은 기간에 맞춰 수용 중 준비할 일을 안내합니다.","single","release",["6개월 이내","6개월~1년","1~3년","3년 이상"].map(v=>({v,b:v}))];
+    case "region": return ["출소 후 생활할 지역은 어디인가요?","지역에 맞는 직업훈련기관과 교육청을 안내합니다.","single","region",Object.keys(REGIONS).map(v=>({v,b:v})),"three"];
+    case "edu": return ["최종 학력은 무엇인가요?","학력에 맞는 검정고시 단계를 자동으로 고릅니다.","single","edu",EDU.map(([v,b])=>({v,b}))];
+    case "worry": return ["가장 고민되는 것을 모두 골라 주세요","여러 개를 고를 수 있습니다. 고른 내용으로 진로 방향을 추천합니다.","multi","worries",WORRY.filter(w=>!w[3]||w[3]===(youth()?"y":"a")).map(([v,b])=>({v,b}))];
+    case "dir": { const r=recDir(); return ["어떤 길을 준비할까요?",r?"고민 내용을 보고 추천 표시를 했습니다.":"원하는 방향을 골라 주세요.","single","dir",[{v:"job",b:"취업",s:"직업과 자격증 정보"},{v:"study",b:"학업",s:"검정고시와 대학 진학 정보"},{v:"both",b:"취업과 학업 모두",s:"두 가지 정보를 함께"}].map(o=>({...o,rec:o.v===r})),"one"]; }
+    case "holAsk": return ["직업 흥미 탐색을 해볼까요?","좋아하는 활동을 고르면 흥미 유형(홀랜드 이론)과 어울리는 직업을 찾아 줍니다. 5개 화면, 약 3분 걸립니다.","single","hol",[{v:"yes",b:"해볼게요",s:"결과가 결과지에 들어갑니다",rec:S.worries.includes("w8")},{v:"skip",b:"건너뛰기",s:"바로 다음 단계로"}],"one"];
+    case "h1": case "h2": case "h3": case "h4": case "h5": { const q=HOL_Q[+cur[1]-1]; return ["해보고 싶거나 즐거울 것 같은 활동을 모두 골라 주세요","잘하는지는 상관없습니다. 마음이 끌리는 것만 고르세요.","multi",cur,[...Object.entries(q).map(([v,b])=>({v,b})),{v:"none",b:"끌리는 것이 없어요"}]]; }
+    case "crime": return ["해당하는 범죄 유형을 골라 주세요","취업이 제한될 수 있는 직업을 표시합니다. 여러 개를 고를 수 있으며, 범죄 유형 이름은 결과지에 인쇄되지 않습니다.","multi","crimes",[...Object.entries(CRIMES).map(([v,c])=>({v,b:c.n})),{v:"none",b:"해당 없음 / 선택 안 함"}]];
+    case "cat": return ["관심 있는 분야를 모두 골라 주세요","여러 개를 고를 수 있습니다. 고른 분야의 직업을 다음 화면에서 함께 보여 줍니다.","multi","cats",CATS.map(c=>({v:c.id,b:c.n,s:c.s,rec:c.jobs.some(k=>holJobs().includes(k))}))];
+    case "job": { const cs=CATS.filter(c=>S.cats.includes(c.id)), one=cs.length===1; return [one?`${cs[0].n} 분야에서 희망하는 직업은?`:"희망하는 직업을 하나 골라 주세요",one?"":"고른 분야별로 직업을 모았습니다.","single","job",[...cs.flatMap(c=>c.jobs.map(k=>({v:k,g:one?"":c.n,b:JOBS[k].n,s:[hits(k).length?"취업 제한 가능 · 확인 필요":"",ageNote(k)].filter(Boolean).join(" · "),w:hits(k).length>0||!!ageNote(k),rec:holJobs().includes(k)}))),{v:"etc",g:one?"":"그 밖의 직업",b:"목록에 없어요",s:"직접 적기"}]]; }
+    case "cert": { const j=JOBS[S.job], mk=(k,g)=>{const c=CERT[k]; return {v:k,g,b:c[0],s:`${c[1]} · 난이도 ${"★".repeat(c[5])}${"☆".repeat(5-c[5])}`};}; return [`${j.n}${josa(j.n)} 되려면 이런 자격증이 필요합니다`,j.d+" 준비할 자격증을 골라 주세요.","multi","certs",[...j.r.map(k=>mk(k,"꼭 필요한 자격증")),...j.a.map(k=>mk(k,"있으면 좋은 자격증"))]]; }
+    case "goal": return ["학업은 어디까지 준비할까요?","대학에 가려면 먼저 고등학교 졸업 학력이 필요합니다.","single","goal",[...(youth()?[{v:"school",b:"학교로 돌아가기",s:"복학·재입학으로 졸업하기",rec:S.worries.includes("w9")}]:[]),{v:"ged",b:GED[gedLevel()][0],s:"학력부터 갖추기",rec:!(youth()&&S.worries.includes("w9"))},{v:"univ",b:"대학 진학",s:"검정고시 합격 후 진학 경로"},{v:"both",b:"검정고시와 대학 진학 모두",s:"단계별로 함께 안내"}],"one"];
+    case "univ": return ["관심 있는 진학 경로를 골라 주세요","고르지 않으면 모든 경로를 안내합니다.","multi","univ",Object.entries(UNIV).map(([v,u])=>({v,b:u[0],s:u[1].split(".")[0]+"."}))];
+  }
+}
+
+function render(){
+  const f=flow(), i=f.indexOf(cur), app=$("app"), total=f.length-2;
+  const G=[["기본 정보",["who","release","region","edu","worry","dir"]],["흥미 탐색",["holAsk","h1","h2","h3","h4","h5","hres"]],["취업",["crime","cat","job","jobEtc","cert"]],["학업",["goal","univ"]],["결과지",["result"]]].filter(g=>g[1].some(k=>f.includes(k)));
+  const gi=G.findIndex(g=>g[1].includes(cur));
+  $("route").style.display=cur==="start"||cur==="admin"?"none":"flex";
+  $("route").innerHTML=G.map((g,n)=>`<li class="${n<gi?"done":n===gi?"now":""}"><span class="dot"></span>${g[0]}</li>`).join("");
+  if(cur==="start"){
+    app.innerHTML=`<div class="hero"><div class="mark"><svg width="38" height="38" viewBox="0 0 38 38" fill="none" aria-hidden="true"><path d="M6 31C14 31 12 19 19 19S25 11 32 11" stroke="#0F5C4E" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="0.1 5.5"/><circle cx="6" cy="31" r="3.5" fill="#0F5C4E"/><circle cx="32" cy="11" r="5" fill="#F2B33D"/></svg></div><h1>진로설계 도우미</h1><p class="lead">질문에 답하며 버튼만 누르면<br>취업·학업 정보를 정리한 A4 결과지가 만들어집니다.</p>
+    <button class="go" id="startBtn">상담 시작하기</button><br><span class="offline">인터넷 없이 작동합니다. ${cfg().on&&store.ok()?"이름 없이 고른 내용만 통계용으로 이 기기에 저장됩니다.":"고른 내용은 저장되지 않습니다."}</span></div>
+    <button class="adminlink" id="adm">관리자</button>`;
+    $("startBtn").onclick=()=>go(1); $("adm").onclick=adminLogin; return;
+  }
+  if(cur==="admin"){ renderAdmin(); return; }
+  if(cur==="result"){
+    saveRecord();
+    app.innerHTML=`<div class="no-print">${topbar("완료")}<h1>결과지가 준비됐습니다</h1><p class="lead">내용을 확인한 뒤 인쇄하세요.</p></div>
+    <div class="sheet">${sheet()}</div>
+    <div class="nav no-print"><button id="back">이전</button><button class="go" id="next">A4로 인쇄</button></div>`;
+    $("back").onclick=()=>go(-1); $("next").onclick=()=>window.print(); $("home").onclick=home; return;
+  }
+  if(cur==="jobEtc"){
+    app.innerHTML=`${topbar(`${i} / ${total}`)}<h1>희망하는 직업을 적어 주세요</h1><p class="lead">결과지에 기록되며, 필요한 자격증은 상담 후 함께 확인하세요.</p>
+    <input type="text" id="etc" value="${esc(S.jobEtc)}" placeholder="예: 목공예가">${bottom(true)}`;
+    $("etc").focus(); bind(()=>{S.jobEtc=$("etc").value.trim();}); return;
+  }
+  if(cur==="hres"){
+    const js=holJobs();
+    app.innerHTML=`${topbar(`${i} / ${total}`)}<h1>흥미 탐색 결과</h1><p class="lead">고른 활동 수를 유형별로 셌습니다. 결과지에도 들어갑니다.</p>
+    <div class="holcard">${holBars()}</div>${holSummary()}${js.length?`<p><b>흥미에 어울리는 직업:</b> ${js.map(k=>JOBS[k].n).join(", ")}</p><p class="lead" style="margin:0">다음 단계에서 이 직업들에 '추천' 표시가 붙습니다.</p>`:""}${bottom(true)}`;
+    bind(); return;
+  }
+  const [q,lead,type,key,opts,layout]=screen();
+  const val=S[key], on=o=>type==="multi"?(o.v==="none"?!!NONE[key]:val.includes(o.v)):val===o.v;
+  let extra="";
+  if(cur==="cert"){ const j=JOBS[S.job], h=hits(S.job);
+    if(h.length) extra=`<div class="note"><b>취업 제한 확인 필요.</b> ${h.map(c=>CRIMES[c].g).join(" ")}</div>`;
+    else if(j.note) extra=`<div class="note">${j.note}</div>`; }
+  app.innerHTML=`${topbar(`${i} / ${total}`)}<h1>${q}</h1>${lead?`<p class="lead">${lead}</p>`:""}
+  <div class="opts ${layout||(opts.length<=3?"one":"")}${type==="multi"?" multi":""}">${opts.map((o,n)=>`${o.g&&(n===0||opts[n-1].g!==o.g)?`<p class="grp">${o.g}</p>`:""}<button class="opt${on(o)?" on":""}${o.rec?" rec":""}" data-n="${n}"><b>${o.b}</b>${o.s?`<small${o.w?' class="w"':""}>${o.s}</small>`:""}</button>`).join("")}</div>
+  ${extra}${bottom(key==="cats"?val.length>0:(type==="multi"||!!val))}`;
+  bind();
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const o=opts[+b.dataset.n];
+    const btns=[...app.querySelectorAll(".opt")], noneBtn=btns.find(x=>opts[+x.dataset.n].v==="none");
+    if(type==="multi"){
+      if(o.v==="none"){ NONE[key]=!NONE[key]; S[key]=[]; btns.forEach(x=>x.classList.remove("on")); if(NONE[key]) b.classList.add("on"); return; }
+      NONE[key]=false; if(noneBtn) noneBtn.classList.remove("on");
+      const a=S[key], k=a.indexOf(o.v); k<0?a.push(o.v):a.splice(k,1); b.classList.toggle("on");
+      if(key==="cats"){ $("next").disabled=!a.length; if(S.job&&S.job!=="etc"&&!CATS.some(c=>a.includes(c.id)&&c.jobs.includes(S.job))){S.job="";S.certs=[];} }
+      return;
+    }
+    if(S[key]!==o.v){
+      S[key]=o.v;
+      if(key==="who"){S.worries=[];S.goal="";}
+      if(key==="job"){S.certs=o.v==="etc"?[]:[...JOBS[o.v].r]; S.jobEtc="";}
+    }
+    btns.forEach(x=>x.classList.toggle("on",x===b)); $("next").disabled=false;
+  });
+}
+
+/* ===== 결과지 ===== */
+function certBox(k){
+  const c=CERT[k];
+  return `<div class="cert"><div class="top"><span><b>${c[0]}</b><span class="tag${c[1]==="국가"?"":" p"}">${c[1]}</span> <small>${c[2]}</small></span><span>난이도 ${stars(c[5])}</span></div>
+  <dl><dt>필기</dt><dd>${c[3]}</dd><dt>실기</dt><dd>${c[4]}</dd></dl></div>`;
+}
+function trainBox(j){
+  const r=S.region||"거주 지역", keys=j.tr||["card"];
+  const te=techEdu(S.region).map(x=>`<tr><th>출소자 직업훈련</th><td>한국법무보호복지공단 ${x[0]} (${x[1]}, ${x[2]}): 출소자 대상 직업훈련. 개설 직종 문의</td></tr>`).join("");
+  return `<h4>배울 수 있는 곳 (${r})</h4><table class="info">${keys.map(k=>{const [t,v]=TRAIN[k](j,r); return `<tr><th>${t}</th><td>${v}</td></tr>`;}).join("")}${te}</table>`;
+}
+function roleBox(k){
+  const rs=ROLE[k]||[]; if(!rs.length) return "";
+  return `<h4>이 일을 하고 있는 사람들</h4><ul class="role">${rs.map(r=>`<li><b>${r[0]}</b>: ${r[1]}<br><small>${r[2]}</small></li>`).join("")}</ul><p><small>책과 유튜브는 서점·도서관이나 유튜브에서 제목으로 찾아보세요. 2026년 10월에 확인한 참고용 정보이며, 채널과 책은 바뀔 수 있고 이 사람들을 추천하거나 보증하는 것은 아닙니다.</small></p>`;
+}
+function sheet(){
+  const dirName={job:"취업",study:"학업",both:"취업 + 학업"}[S.dir]||"미정";
+  const eduName=(EDU.find(e=>e[0]===S.edu)||[,""])[1];
+  const worries=S.worries.map(w=>WORRY.find(x=>x[0]===w)[1]).join(", ");
+  let h=`<div class="r-title"><h2>진로설계 결과지</h2><small>${INFO_DATE}</small></div>
+  <table class="info"><tr><th>구분</th><td>${youth()?"소년":"성인"}</td><th>출소 예정</th><td>${S.release}</td></tr><tr><th>생활 지역</th><td colspan="3">${S.region}</td></tr>
+  <tr><th>최종 학력</th><td>${eduName}</td><th>진로 방향</th><td>${dirName}</td></tr>
+  <tr><th>진로 고민</th><td colspan="3">${worries||"-"}</td></tr></table>`;
+  if(holDone()){ const js=holJobs();
+    h+=`<div class="r-sec"><h3>직업 흥미 탐색 결과</h3>${holBars()}${holSummary()}${js.length?`<p>흥미에 어울리는 직업: ${js.map(k=>JOBS[k].n).join(", ")}</p>`:""}${wantStudy()?holMajors():""}<p><small>홀랜드 직업흥미 이론을 바탕으로 만든 간이 체크로, 표준화된 심리검사가 아닙니다. 정식 검사는 고용24의 직업선호도검사 S형(25분)·L형(60분)을 무료로 받을 수 있고, 지필검사는 고용복지플러스센터에서 받을 수 있습니다.</small></p></div>`; }
+  if(wantJob()){
+    if(S.job==="etc"){ h+=`<div class="r-sec"><h3>취업 준비 안내 : ${esc(S.jobEtc)||"희망 직업"}</h3><p>필요한 자격증과 준비 방법은 상담 직원과 함께 확인하세요.</p>${trainBox({kw:S.jobEtc||"희망 직종",tr:["self","card"]})}</div>`; }
+    else if(S.job){
+      const j=JOBS[S.job], hit=hits(S.job);
+      h+=`<div class="r-sec"><h3>취업 준비 안내 : ${j.n}</h3><p>${j.d}</p>`;
+      if(hit.length) h+=`<div class="warnbox"><b>취업 제한 확인 필요.</b> 이 직업은 범죄경력에 따라 자격 취득이나 취업이 일정 기간 제한될 수 있습니다. 준비를 시작하기 전에 판결 내용과 관련 법령을 상담 직원과 함께 확인하세요.</div>`;
+      if(youth()&&AGE[S.job]) h+=`<div class="warnbox"><b>나이 요건.</b> 이 직업에 필요한 자격·면허는 만 ${AGE[S.job]}세 이상부터 취득할 수 있습니다. 출소 시 나이를 확인하고, 그 전까지는 필기 공부와 기초 기술을 준비하세요.</div>`;
+      if(j.note) h+=`<p><small>${j.note}</small></p>`;
+      const req=j.r.filter(k=>S.certs.includes(k)), add=j.a.filter(k=>S.certs.includes(k));
+      if(req.length) h+=`<h4>꼭 필요한 자격증 <small style="font-weight:400;color:var(--sub)">(난이도는 참고용 체감 수준)</small></h4>`+req.map(certBox).join("");
+      if(add.length) h+=`<h4>있으면 좋은 자격증</h4>`+add.map(certBox).join("");
+      if([...req,...add].some(k=>CERT[k][2]===KS)) h+=`<p><small>한국산업인력공단 기능사 등급은 학력·경력 응시 제한이 없습니다(산업기사 이상은 응시자격 필요). 과목 구성은 큐넷(q-net.or.kr) 출제기준에서 최신 내용을 확인하세요.</small></p>`;
+      h+=`<h4>준비 순서</h4><ol>${j.p.map(s=>`<li>${s}</li>`).join("")}</ol>${trainBox(j)}${roleBox(S.job)}</div>`;
+    }
+    const gs=S.crimes.map(c=>CRIMES[c].g);
+    if(gs.length) h+=`<div class="r-sec"><h3>취업 제한 확인 사항</h3><ul>${gs.map(g=>`<li>${g}</li>`).join("")}</ul><p><small>제한 여부와 기간은 판결 내용(취업제한명령 등)과 법 개정에 따라 다르므로 개별 확인이 필요합니다.</small></p></div>`;
+  }
+  if(wantJob()&&youth()) h+=`<div class="r-sec"><h3>만 18세 미만이 일할 때 알아둘 점</h3><ul><li>취업할 때 가족관계증명서와 친권자(또는 후견인) 동의서가 필요합니다.</li><li>위험하거나 해로운 업무에는 일할 수 없고, 야간·휴일 근로는 본인 동의와 고용노동부 인가가 있어야 합니다.</li><li>부당한 대우를 받으면 고용노동부 고객상담센터(1350)에 상담하세요.</li></ul></div>`;
+  if(wantStudy()){
+    const full=(REGIONS[S.region]||[""])[0];
+    h+=`<div class="r-sec"><h3>학업 안내</h3>`;
+    if(youth()&&S.goal==="school") h+=`<div class="cert"><b>학교로 돌아가기 (복학·재입학)</b><ul><li>다니던 학교에 복학이나 재입학 절차를 문의하세요. 학교를 옮기려면 ${full||"거주 지역"} 관할 교육지원청에 편입학 절차를 문의합니다.</li><li>학교 밖 청소년 지원센터(꿈드림)에서 학업 복귀 상담과 검정고시 학습 지원을 받을 수 있습니다.</li><li>복학이 어렵다면 검정고시로 같은 학력을 얻을 수 있습니다.</li></ul></div>`;
+    if(wantGed()){
+      const steps=GED_STEPS[S.edu]||[gedLevel()];
+      if(steps.length>1) h+=`<p><b>학력 단계:</b> ${steps.map(k=>GED[k][0]).join(" → ")}${wantUniv()?" → 대학 진학":""} 순서로 준비합니다.</p>`;
+      h+=steps.map(k=>{const g=GED[k]; return `<div class="cert"><div class="top"><b>${g[0]}</b><span>난이도 ${stars(g[2])}</span></div><dl class="wide">${g[1].map(x=>`<dt>${x[0]}</dt><dd>${x[1]}</dd>`).join("")}</dl></div>`;}).join("");
+      h+=`<h4>검정고시 공통 안내</h4><ul>${GED_COMMON.map(x=>`<li>${x}</li>`).join("")}${(REGIONS[S.region]||[""])[0]?`<li>출소 후에는 ${(REGIONS[S.region]||[""])[0]}교육청 누리집의 검정고시 공고를 확인하세요.</li>`:""}</ul>`;
+    }
+    if(wantUniv()){
+      if(lowEdu()) h+=`<div class="warnbox">대학에 진학하려면 고등학교 졸업 학력이 필요합니다. 고졸 검정고시 합격 후 아래 경로를 준비하세요.</div>`;
+      const us=(S.univ.length?S.univ:Object.keys(UNIV)).map(k=>UNIV[k]);
+      h+=`<h4>대학 진학 경로</h4>`+us.map(u=>`<div class="cert"><b>${u[0]}</b><br>${u[1]}<dl class="wide">${u[3].map(x=>`<dt>${x[0]}</dt><dd>${x[1]}</dd>`).join("")}<dt>안내처</dt><dd>${u[2]}</dd></dl></div>`).join("");
+    }
+    h+=`<p><small>${EDU_INSIDE}</small></p></div>`;
+  }
+  const ko=KOREHA[S.region]||[];
+  h+=`<div class="r-sec"><h3>출소 후 도움받을 수 있는 곳 (${S.region||"전국"})</h3>
+  <h4>한국법무보호복지공단: 숙식·긴급생활비·주거 지원, 허그일자리(취업), 직업훈련</h4>
+  <table class="info"><tr><th>기관</th><th style="width:auto">주소</th><th>전화</th></tr>${ko.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td style="white-space:nowrap">${x[2]}</td></tr>`).join("")}
+  <tr><td>대표번호</td><td>가까운 지부 안내, 보호사업 신청</td><td>1670-7004</td></tr></table>
+  ${youth()?`<h4>청소년 지원 (${S.region||"거주 지역"})</h4><table class="info">
+  <tr><td style="width:30%">학교 밖 청소년 지원센터 (꿈드림)</td><td>학업 복귀, 검정고시 학습, 직업체험·취업 지원. 시·군·구마다 있으며 꿈드림 누리집(kdream.or.kr)에서 가까운 센터를 찾습니다.</td></tr>
+  <tr><td>청소년상담 1388</td><td>고민 상담과 위기 지원. 전화 1388 (휴대전화는 지역번호+1388), 문자·카카오톡 상담도 됩니다.</td></tr>
+  <tr><td>청소년 직업심리검사</td><td>고용24의 청소년 대상 검사는 회원가입 없이도 받을 수 있습니다.</td></tr></table>`:""}
+  <h4>고용복지플러스센터 (${S.region||"거주 지역"})</h4>
+  <p>국민취업지원제도, 국민내일배움카드, 직업심리검사(무료). 가까운 센터는 고용노동부 고객상담센터 1350 또는 고용24 '센터 찾기'로 확인하세요.</p></div>
+  <div class="foot">이 결과지는 상담 참고용입니다. 시험 과목·일정·응시 자격, 훈련기관 과정, 취업 제한 법령은 바뀔 수 있으니 실제 준비 전 해당 기관의 최신 정보를 확인하세요.</div>`;
+  return h;
+}
+reset();
+</script>
+</body>
+</html>
