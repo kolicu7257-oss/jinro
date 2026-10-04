@@ -156,9 +156,6 @@ html.big .shell,html.big .modal .box{zoom:1.22}
 .startlinks .adminlink{display:inline-block;margin:6px 0 0 14px}
 .homebtn,.step{white-space:nowrap}
 .topbar{flex-wrap:wrap;gap:8px}
-.about li{margin:6px 0;color:var(--ink)}
-.about ul{padding-left:20px;margin:10px 0 0;font-size:15px}
-.modal .box.wide{max-width:560px}
 /* 결과지 요약(1쪽)과 상세(별지) */
 .sum{border:2px solid var(--accent);border-radius:8px;padding:14px 18px 10px;margin:14px 0 6px}
 .sum h3{margin:0 0 8px;font-size:18px;color:var(--accent)}
@@ -692,15 +689,6 @@ const bigBtn = () => `<button class="homebtn txtbtn" data-big>${document.documen
 const topbar = label => `<div class="topbar"><p class="step">${label}</p><div class="tools">${bigBtn()}<button class="homebtn" id="home">처음으로</button></div></div>`;
 /* 큰 글씨: 화면 전체를 키움(인쇄 결과지는 그대로). 기기에 저장하지 않음 */
 document.addEventListener("click",e=>{ const b=e.target.closest("[data-big]"); if(!b) return; const on=document.documentElement.classList.toggle("big"); document.querySelectorAll("[data-big]").forEach(x=>x.textContent=on?"글자 보통":"글자 크게"); });
-function about(){
-  modal(`<h2>만든 과정과 정보 출처</h2><div class="about"><ul>
-  <li>교정시설 심리치료 담당 교도관이 생성형 AI(Claude)와 함께 만들었습니다.</li>
-  <li><b>AI가 한 일:</b> 공개 자료(큐넷, 교육청 검정고시 공고, 한국법무보호복지공단·한국폴리텍대학 누리집 등)를 찾아 직업 ${Object.keys(JOBS).length}개, 자격증 ${Object.keys(CERT).length}개, 검정고시·대학 진학 경로, 지원기관 연락처, 직업별 롤모델을 정리하고 화면과 결과지를 만들었습니다.</li>
-  <li><b>사람이 한 일:</b> 상담 현장에 맞게 질문과 순서를 정하고, AI가 정리한 내용을 검토해 넣을지 정했습니다. 출처로 확인되지 않은 정보는 넣지 않거나 '확인 필요'로 표시했습니다.</li>
-  <li><b>정보:</b> ${INFO_DATE}입니다. 시험 과목·일정, 기관 연락처, 법령은 바뀔 수 있으니 실제 준비 전에 해당 기관에 확인하세요.</li>
-  <li><b>개인정보:</b> 이름·수번·범죄 유형은 저장하지 않습니다.</li></ul></div>
-  <div class="nav"><span></span><button class="go" id="mOk">닫기</button></div>`,(m,c)=>{ m.querySelector(".box").classList.add("wide"); m.querySelector("#mOk").onclick=c; });
-}
 const bottom = ok => `<div class="nav"><button id="back">이전</button><button class="go" id="next"${ok?"":" disabled"}>다음</button></div>`;
 function bind(before){ $("back").onclick=()=>go(-1); $("home").onclick=()=>home(); $("next").onclick=()=>{ if(before) before(); go(1); }; }
 function home(end){
@@ -748,8 +736,8 @@ function render(){
   if(cur==="start"){
     app.innerHTML=`<div class="hero"><div class="mark"><svg width="38" height="38" viewBox="0 0 38 38" fill="none" aria-hidden="true"><path d="M6 31C14 31 12 19 19 19S25 11 32 11" stroke="#0F5C4E" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="0.1 5.5"/><circle cx="6" cy="31" r="3.5" fill="#0F5C4E"/><circle cx="32" cy="11" r="5" fill="#F2B33D"/></svg></div><h1>진로설계 도우미</h1><p class="lead">질문에 답하며 버튼만 누르면<br>취업·학업 정보를 정리한 A4 결과지가 만들어집니다.</p>
     <button class="go" id="startBtn">상담 시작하기</button><br><span class="offline">인터넷 없이 작동합니다. ${cfg().on&&store.ok()?"이름 없이 고른 내용만 통계용으로 이 기기에 저장됩니다.":"고른 내용은 저장되지 않습니다."}</span></div>
-    <div class="startlinks"><span><button class="homebtn txtbtn" data-big>${document.documentElement.classList.contains("big")?"글자 보통":"글자 크게"}</button></span><span><button class="adminlink" id="about">만든 과정·정보 출처</button><button class="adminlink" id="adm">관리자</button></span></div>`;
-    $("startBtn").onclick=()=>go(1); $("adm").onclick=()=>adminLogin(); $("about").onclick=about; return;
+    <div class="startlinks"><span><button class="homebtn txtbtn" data-big>${document.documentElement.classList.contains("big")?"글자 보통":"글자 크게"}</button></span><span><button class="adminlink" id="adm">관리자</button></span></div>`;
+    $("startBtn").onclick=()=>go(1); $("adm").onclick=()=>adminLogin(); return;
   }
   if(cur==="admin"){ renderAdmin(); return; }
   if(cur==="result"){
