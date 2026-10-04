@@ -109,6 +109,10 @@ button.danger{color:#A3261B!important;border-color:#E6B8B2!important}
 .r-title{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:14px}
 .r-title h2{margin:0;font-size:21px}
 .r-title small{color:var(--sub)}
+.r-qr{display:flex;align-items:flex-end;gap:10px;text-align:right}
+.r-qr small{display:block}
+.r-qrcap{font-size:11px;line-height:1.35;margin-top:4px}
+.r-qrimg{width:76px;height:76px;flex:none}
 table.info{width:100%;border-collapse:collapse;margin-bottom:12px}
 table.info th,table.info td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
 table.info th{background:var(--soft);width:18%;font-weight:600}
@@ -148,6 +152,7 @@ table.info th,table.info td{padding:8px 11px}
   @page{size:A4;margin:14mm 13mm}
   body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .no-print{display:none!important}
+  .r-qrimg{width:22mm;height:22mm}
   .shell{max-width:none;padding:0}
   .card{border:0;padding:0;box-shadow:none;border-radius:0}
   .sheet{border:0;padding:0;margin:0;font-size:11.5pt;line-height:1.6}
@@ -741,11 +746,13 @@ function roleBox(k){
   const rs=ROLE[k]||[]; if(!rs.length) return "";
   return `<h4>이 일을 하고 있는 사람들</h4><ul class="role">${rs.map(r=>`<li><b>${r[0]}</b>: ${r[1]}<br><small>${r[2]}</small></li>`).join("")}</ul><p><small>책과 유튜브는 서점·도서관이나 유튜브에서 제목으로 찾아보세요. 2026년 10월에 확인한 참고용 정보이며, 채널과 책은 바뀔 수 있고 이 사람들을 추천하거나 보증하는 것은 아닙니다.</small></p>`;
 }
+/* 결과지 오른쪽 위 QR: 공개 주소 https://kolicu7257-oss.github.io/jinro/ (인터넷 없이 그려지는 SVG) */
+const QR_SVG=`<svg class="r-qrimg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="진로설계 도우미 주소 QR코드"><rect width="33" height="33" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h4v1h-4zM17 2h1v1h-1zM19 2h4v1h-4zM24 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h1v1h-1zM14 3h2v1h-2zM17 3h2v1h-2zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM11 4h1v1h-1zM13 4h1v1h-1zM17 4h1v1h-1zM19 4h3v1h-3zM24 4h1v1h-1zM26 4h3v1h-3zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM13 5h2v1h-2zM16 5h1v1h-1zM20 5h3v1h-3zM24 5h1v1h-1zM26 5h3v1h-3zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM11 6h4v1h-4zM16 6h3v1h-3zM20 6h1v1h-1zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM17 7h5v1h-5zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h7v1h-7zM11 9h1v1h-1zM13 9h2v1h-2zM16 9h6v1h-6zM2 10h1v1h-1zM5 10h1v1h-1zM7 10h2v1h-2zM10 10h1v1h-1zM12 10h1v1h-1zM14 10h2v1h-2zM17 10h2v1h-2zM22 10h2v1h-2zM25 10h1v1h-1zM3 11h2v1h-2zM7 11h1v1h-1zM9 11h3v1h-3zM18 11h1v1h-1zM22 11h3v1h-3zM27 11h1v1h-1zM30 11h1v1h-1zM2 12h11v1h-11zM14 12h1v1h-1zM20 12h2v1h-2zM25 12h5v1h-5zM3 13h2v1h-2zM15 13h1v1h-1zM20 13h1v1h-1zM24 13h1v1h-1zM26 13h1v1h-1zM28 13h2v1h-2zM2 14h2v1h-2zM7 14h3v1h-3zM11 14h1v1h-1zM14 14h1v1h-1zM16 14h4v1h-4zM21 14h4v1h-4zM27 14h1v1h-1zM29 14h2v1h-2zM2 15h2v1h-2zM9 15h2v1h-2zM12 15h4v1h-4zM19 15h4v1h-4zM3 16h2v1h-2zM6 16h4v1h-4zM11 16h2v1h-2zM14 16h3v1h-3zM19 16h1v1h-1zM22 16h9v1h-9zM5 17h3v1h-3zM12 17h1v1h-1zM18 17h2v1h-2zM21 17h2v1h-2zM26 17h2v1h-2zM29 17h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM6 18h1v1h-1zM8 18h2v1h-2zM11 18h1v1h-1zM13 18h3v1h-3zM17 18h1v1h-1zM19 18h1v1h-1zM22 18h1v1h-1zM29 18h1v1h-1zM3 19h4v1h-4zM9 19h1v1h-1zM12 19h1v1h-1zM15 19h2v1h-2zM19 19h1v1h-1zM22 19h1v1h-1zM24 19h2v1h-2zM27 19h1v1h-1zM30 19h1v1h-1zM2 20h1v1h-1zM5 20h2v1h-2zM8 20h2v1h-2zM14 20h1v1h-1zM16 20h1v1h-1zM20 20h1v1h-1zM23 20h3v1h-3zM29 20h2v1h-2zM4 21h3v1h-3zM9 21h1v1h-1zM11 21h1v1h-1zM14 21h1v1h-1zM16 21h1v1h-1zM19 21h1v1h-1zM21 21h2v1h-2zM26 21h1v1h-1zM29 21h2v1h-2zM2 22h1v1h-1zM6 22h1v1h-1zM8 22h3v1h-3zM13 22h2v1h-2zM17 22h2v1h-2zM22 22h5v1h-5zM28 22h1v1h-1zM10 23h3v1h-3zM16 23h1v1h-1zM18 23h3v1h-3zM22 23h1v1h-1zM26 23h1v1h-1zM28 23h3v1h-3zM2 24h7v1h-7zM11 24h1v1h-1zM13 24h1v1h-1zM18 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM29 24h1v1h-1zM2 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM13 25h2v1h-2zM16 25h2v1h-2zM20 25h3v1h-3zM26 25h3v1h-3zM30 25h1v1h-1zM2 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM12 26h1v1h-1zM14 26h1v1h-1zM17 26h3v1h-3zM22 26h5v1h-5zM29 26h2v1h-2zM2 27h1v1h-1zM4 27h3v1h-3zM8 27h1v1h-1zM10 27h4v1h-4zM15 27h1v1h-1zM19 27h1v1h-1zM21 27h1v1h-1zM23 27h7v1h-7zM2 28h1v1h-1zM4 28h3v1h-3zM8 28h1v1h-1zM11 28h1v1h-1zM15 28h1v1h-1zM18 28h1v1h-1zM20 28h2v1h-2zM23 28h1v1h-1zM26 28h3v1h-3zM30 28h1v1h-1zM2 29h1v1h-1zM8 29h1v1h-1zM14 29h2v1h-2zM18 29h2v1h-2zM22 29h2v1h-2zM26 29h1v1h-1zM29 29h1v1h-1zM2 30h7v1h-7zM10 30h1v1h-1zM13 30h1v1h-1zM17 30h1v1h-1zM19 30h4v1h-4zM24 30h1v1h-1zM27 30h1v1h-1zM29 30h1v1h-1z"/></svg>`;
 function sheet(){
   const dirName={job:"취업",study:"학업",both:"취업 + 학업"}[S.dir]||"미정";
   const eduName=(EDU.find(e=>e[0]===S.edu)||[,""])[1];
   const worries=S.worries.map(w=>WORRY.find(x=>x[0]===w)[1]).join(", ");
-  let h=`<div class="r-title"><h2>진로설계 결과지</h2><small>${INFO_DATE}</small></div>
+  let h=`<div class="r-title"><h2>진로설계 결과지</h2><div class="r-qr"><div><small>${INFO_DATE}</small><small class="r-qrcap">휴대폰 카메라로 찍으면<br>이 프로그램을 다시 쓸 수 있습니다</small></div>${QR_SVG}</div></div>
   <table class="info"><tr><th>구분</th><td>${youth()?"소년":"성인"}</td><th>출소 예정</th><td>${S.release}</td></tr><tr><th>생활 지역</th><td colspan="3">${S.region}</td></tr>
   <tr><th>최종 학력</th><td>${eduName}</td><th>진로 방향</th><td>${dirName}</td></tr>
   <tr><th>진로 고민</th><td colspan="3">${worries||"-"}</td></tr></table>`;
