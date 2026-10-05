@@ -148,8 +148,30 @@ table.info th,table.info td{padding:8px 11px}
 .warnbox{padding:9px 12px}
 .hb b{font-size:15px}
 .foot{font-size:13px;color:#3F4F4A;line-height:1.6}
+/* 큰 글씨 모드 */
+html.big .shell,html.big .modal .box{zoom:1.22}
+.txtbtn::before{content:"가";font-weight:800;font-size:15px}
+.topbar .tools{display:flex;gap:8px}
+.startlinks{display:flex;justify-content:space-between;gap:10px}
+.startlinks .adminlink{display:inline-block;margin:6px 0 0 14px}
+.homebtn,.step{white-space:nowrap}
+.topbar{flex-wrap:wrap;gap:8px}
+/* 결과지 요약(1쪽)과 상세(별지) */
+.sum{border:2px solid var(--accent);border-radius:8px;padding:14px 18px 10px;margin:14px 0 6px}
+.sum h3{margin:0 0 8px;font-size:18px;color:var(--accent)}
+.sum table.info{margin:0}
+.sum table.info th{width:22%}
+.sum ol{margin:0;padding-left:20px}
+.sum .flag{display:inline-block;font-size:.85em;font-weight:700;color:var(--warn);border:1px solid var(--warn);border-radius:9px;padding:0 7px;margin-left:6px}
+.sum-more{margin:8px 0 0;font-size:.9em;color:#3F4F4A}
+.detail-h{margin:34px 0 0;padding-top:14px;border-top:2px dashed var(--line);font-size:20px}
+.nav .right{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 @media print{
   @page{size:A4;margin:14mm 13mm}
+  html.big .shell{zoom:1}
+  .detail-h{border-top:0;margin-top:0;padding-top:0}
+  .detail{break-before:page}
+  body.sum-only .detail{display:none}
   body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .no-print{display:none!important}
   .r-qrimg{width:22mm;height:22mm}
@@ -174,7 +196,18 @@ table.info th,table.info td{padding:8px 11px}
    자격증 형식: [자격명, 시행기관, 필기(또는 이론), 실기, 체감 난이도 1~5]
    직업 추가: JOBS에 항목을 넣고 CATS의 jobs 목록에 키를 추가
    ========================================================= */
+/* ===== 기관 정보 고치는 곳: 주소·전화가 바뀌면 아래 INFO_DATE, CONTACT, REGIONS, KOREHA만 고칩니다 =====
+   INFO_DATE : 정보를 마지막으로 확인한 달. 결과지 오른쪽 위와 연락처 표 아래에 인쇄됩니다.
+   CONTACT   : 전국 대표번호
+   REGIONS   : 시·도별 정식 이름, 한국폴리텍대학 캠퍼스
+   KOREHA    : 시·도별 한국법무보호복지공단 지부·기술교육원 [이름, 주소, 전화]
+   갱신 절차 (6개월마다, 또는 기관이 옮겼다는 소식이 있을 때)
+   1. 한국법무보호복지공단(koreha.or.kr) 지부 안내, 한국폴리텍대학(kopo.ac.kr) 캠퍼스 안내를 아래 표와 한 줄씩 대조합니다.
+   2. 바뀐 칸만 고치고 INFO_DATE를 확인한 달로 바꿉니다.
+   3. 파일을 열어 성인·소년 결과지를 끝까지 만들고 인쇄 미리보기로 확인합니다.
+   4. 기관 PC의 파일과 공개 주소(index.html)를 새 파일로 바꿉니다. */
 const INFO_DATE = "2026년 10월 기준";
+const CONTACT = {koreha:"1670-7004", moel:"1350", youth:"1388", knou:"1577-2853"};
 const REGIONS = {
   "서울":["서울특별시",["서울정수캠퍼스(용산구)","서울강서캠퍼스(강서구)"]],
   "부산":["부산광역시",["부산캠퍼스","동부산캠퍼스"]],
@@ -193,6 +226,25 @@ const REGIONS = {
   "경북":["경상북도",["구미캠퍼스","포항캠퍼스","영주캠퍼스"]],
   "경남":["경상남도",["창원캠퍼스","진주캠퍼스"]],
   "제주":["제주특별자치도",["제주캠퍼스"]]
+};
+const KOREHA = {
+  "서울":[["서울지부","양천구 지양로 137","02-2605-3427"],["서울동부지부","송파구 오금로 509","02-3401-7046"],["서울서부지부","은평구 갈현로7길 5-14","02-385-3091"],["서울북부지부","도봉구 방학로8길 33","02-954-0657"],["서울동부기술교육원","송파구 오금로 509","02-6952-5181"]],
+  "부산":[["부산지부","사하구 낙동대로 640","051-294-1385"]],
+  "대구":[["대구지부","달서구 달구벌대로 1378, 3층","053-583-7965"]],
+  "인천":[["인천지부","서해구 서곶로 323, 3층","032-564-3858"],["인천기술교육원","서구 심곡로 86","032-561-6163"]],
+  "광주":[["광주지부","북구 동운로52번길 18","062-531-5731"],["광주남부지부","서구 월드컵4강로71번길 20","062-383-2751"]],
+  "대전":[["대전지부","중구 대둔산로350번길 19","042-581-0705"]],
+  "울산":[["울산지부","남구 돋질로 450","052-256-6960"],["울산기술교육원","남구 돋질로 450","052-249-4121"]],
+  "세종":[["대전지부 (세종 인근)","대전 중구 대둔산로350번길 19","042-581-0705"]],
+  "경기":[["경기지부","수원시 장안구 천천로 126","031-271-6189"],["경기남부지부","화성시 병점중앙로 154","031-232-5074"],["경기북부지부","의정부시 입석로 45","031-872-5183"],["경기동부지부","광주시 경충대로184번길 7-8","031-245-2653"]],
+  "강원":[["강원지부","춘천시 영서로 2953","033-242-5635"],["강원동부지부","강릉시 옥가로 56","033-647-3185"],["원주허그상담소","원주시 북원로 2551, 3층","033-742-8652"]],
+  "충북":[["충북지부","청주시 서원구 청남로1847번길 118","043-291-8329"]],
+  "충남":[["충남지부","홍성군 홍북읍 충서로2376번길 30","041-631-6750"],["충남기술교육원","홍성군 홍북읍 충서로2376번길 30","041-630-0800"],["천안허그상담소","천안시 서북구 서부5길 15, 3층","041-904-1011"]],
+  "전북":[["전북지부","전주시 완산구 쑥고개옛길 127-4","063-229-8140"],["전북기술교육원","전주시 완산구 쑥고개옛길 127-4","063-222-1560"]],
+  "전남":[["전남동부지부","여수시 만성로 210-30","061-655-6825"],["광주지부 (전남 서부 인근)","광주 북구 동운로52번길 18","062-531-5731"]],
+  "경북":[["경북지부","예천군 호명읍 봉호로 4057","054-652-6380"],["경북서부지부","구미시 형곡로22길 5-12","054-456-7689"],["경북기술교육원","예천군 호명읍 봉호로 4057","054-716-1661"]],
+  "경남":[["경남지부","창원시 의창구 동읍 의창대로 918","055-293-4465"],["경남서부지부","진주시 석갑로 135","055-744-6410"],["경남기술교육원","창원시 의창구 동읍 의창대로 918","055-291-7735"],["통영허그상담소","통영시 광도면 죽림4로 8, 2층","055-646-2888"]],
+  "제주":[["제주지부","제주시 기자길 70","064-759-8733"]]
 };
 const CATS = [
   {id:"tech",n:"기술·제조",s:"용접, 전기, 자동차 정비·도장, 장비·전자기기 수리",jobs:["weld","elec","car","pipe","carpaint","cmech","elecfix"]},
@@ -330,14 +382,14 @@ const JOBS = {
   barista:{n:"바리스타",d:"카페 취업·창업에 활용됩니다. 바리스타 자격은 민간자격입니다.",kw:"바리스타",r:["barista"],a:["bakeC","bakeB"],tr:["inside","card"],p:["발급 기관의 공신력 확인","교정시설 내 관련 교육 여부 확인","카페 근무로 경력 시작"]},
   hair:{n:"미용사",d:"미용실 취업 후 경력을 쌓아 창업까지 이어질 수 있습니다.",kw:"미용",r:["hair"],a:["skin","nail","makeup"],tr:["inside","card","q"],p:["교정시설 직업훈련(미용) 과정 확인","필기 학습 후 실기 연습","미용실 보조로 경력 시작"]},
   barber:{n:"이용사",d:"이발소·바버숍에서 일하며 숙련 후 독립할 수 있습니다.",kw:"이용",r:["barber"],a:["hair"],tr:["inside","card","q"],p:["교정시설 직업훈련(이용) 과정 확인","실기 연습","바버숍 보조로 경력 시작"]},
-  truck:{n:"화물 운송 기사",d:"택배·화물 운송 일자리가 많지만 범죄경력에 따라 자격 취득이 제한될 수 있습니다.",kw:"운전",r:["lic1","cargo"],a:["licL","tow","fork"],tr:["self","lic","kotsa"],lim:["sex","drug","violent","traffic"],p:["범죄경력에 따른 자격 결격 여부부터 확인","운전면허 상태(취소·정지 여부) 확인","면허 취득 후 화물운송종사자격 준비"]},
+  truck:{n:"화물 운송 기사",d:"택배·화물 운송 일자리가 많지만 범죄경력에 따라 자격 취득이 제한될 수 있습니다.",kw:"운전",r:["lic1","cargo"],a:["licL","tow","fork"],tr:["self","lic","kotsa"],lim:["sex","drug","violent","traffic"],p:["범죄경력 때문에 자격을 못 받는지(결격 여부)부터 확인","운전면허 상태(취소·정지 여부) 확인","면허 취득 후 화물운송종사자격 준비"]},
   taxi:{n:"택시 기사",d:"범죄경력에 따라 일정 기간 택시운전자격 취득이 제한될 수 있어 사전 확인이 필수입니다.",kw:"운전",r:["lic1","taxi"],a:[],tr:["self","lic","kotsa"],lim:["sex","drug","violent","traffic"],p:["범죄경력에 따른 자격 제한 여부부터 확인","운전면허와 운전경력 요건 확인","자격시험 준비"]},
   forklift:{n:"지게차 기사",d:"물류센터·공장 일자리가 많고 비교적 짧은 기간에 자격 취득이 가능합니다.",kw:"지게차",r:["fork"],a:["lic1","excav","logi"],tr:["self","card","q"],p:["필기는 수용 중 독학 가능","실기는 출소 후 훈련기관 연계","물류센터 구인처 연계"]},
-  carer:{n:"요양보호사",d:"수요가 많은 분야지만 법에 따른 결격사유와 취업제한이 있습니다.",kw:"요양보호사",r:["carer"],a:["lic1","social","nurseA"],tr:["self","carerEdu"],lim:["sex","abuse","drug","any"],p:["결격사유·취업제한 해당 여부 확인","출소 후 요양보호사교육원 수강","합격 후 요양시설·재가센터 취업"]},
-  social:{n:"사회복지사",d:"복지기관에서 일하려면 학위 과정이 필요하고 결격사유가 있습니다.",kw:"사회복지",r:["social"],a:["carer","jobc"],tr:["self","cbEdu"],lim:["sex","abuse","any"],p:["결격사유 해당 여부 확인","고졸 학력이 없으면 검정고시부터","학점은행제 등으로 과목 이수"]},
+  carer:{n:"요양보호사",d:"일자리가 많은 분야지만, 범죄경력에 따라 자격을 못 받거나 일할 수 없는 경우가 있습니다.",kw:"요양보호사",r:["carer"],a:["lic1","social","nurseA"],tr:["self","carerEdu"],lim:["sex","abuse","drug","any"],p:["범죄경력 때문에 자격을 못 받거나 일할 수 없는지 확인","출소 후 요양보호사교육원 수강","합격 후 요양시설·재가센터 취업"]},
+  social:{n:"사회복지사",d:"복지기관에서 일하려면 학위 과정이 필요하고, 범죄경력에 따라 자격을 못 받는 경우가 있습니다.",kw:"사회복지",r:["social"],a:["carer","jobc"],tr:["self","cbEdu"],lim:["sex","abuse","any"],p:["범죄경력 때문에 자격을 못 받는지 확인","고졸 학력이 없으면 검정고시부터","학점은행제 등으로 과목 이수"]},
   dog:{n:"반려견 훈련사",d:"국가자격 '반려동물행동지도사'가 있으며 반려견 행동교정·훈련·보호자 교육을 합니다.",kw:"반려동물",r:["dogN"],a:["dogP","groom"],tr:["self","dogEdu","card"],lim:["drug"],
     p:["필기는 수용 중 교재로 독학 가능 (보통 연 1회, 가을 필기)","실기에는 본인 또는 직계가족 명의로 등록된 6개월령 이상 반려견이 필요","출소 후 훈련소 보조로 경력을 쌓으며 실기 준비"],
-    note:"만 18세 이상 응시 가능. 동물보호법상 결격사유가 있으니 자격정보시스템에서 확인하세요."},
+    note:"만 18세 이상 응시 가능. 동물보호법에 따라 자격을 못 받는 경우가 있으니 자격정보시스템에서 확인하세요."},
   petgroom:{n:"애견 미용사",d:"반려동물 미용실·동물병원 등에서 일하며 창업도 가능합니다. 관련 자격은 민간자격입니다.",kw:"애견미용",r:["groom"],a:["dogN"],tr:["groomEdu","card"],p:["발급 기관의 공신력 확인","출소 후 교육기관에서 실기 연습","애견미용실 보조로 경력 시작"]},
   landscape:{n:"조경 기능공",d:"공원·아파트 단지 녹지 조성과 관리 일을 합니다.",kw:"조경",r:["land"],a:["forest","lic1","excav"],tr:["inside","poly","card","q"],p:["필기 학습","실기 연습","조경 업체 현장 보조로 시작"]},
   flower:{n:"플로리스트",d:"꽃집·행사장 장식 일을 하며 창업으로 이어질 수 있습니다.",kw:"화훼장식",r:["flower"],a:["floP","land"],tr:["inside","card","q"],p:["교정시설 원예 훈련 여부 확인","실기 작품 연습","꽃집 보조로 경력 시작"]},
@@ -346,7 +398,7 @@ const JOBS = {
   it:{n:"IT 기초 기술자",d:"정보처리 기초 지식을 증명하는 입문 자격입니다.",kw:"정보처리",r:["info"],a:["comp2","linux","net"],tr:["self","poly","card","q"],p:["필기 학습","실기 문제 연습","IT 관련 보조직 지원"]},
   hvac:{n:"냉난방 설비 기사",d:"건물 냉난방·냉동 설비를 설치하고 관리합니다. 시설관리 취업에 유리합니다.",kw:"공조냉동",r:["hvac"],a:["energy","elec","fire2"],tr:["inside","poly","kigan","card","q"],p:["필기 학습","실기 연습","설비·시설관리 업체 취업"]},
   fire:{n:"건물 소방 안전 관리",d:"일정 규모 이상 건물은 소방안전관리자를 두어야 해 시설관리직 취업에 도움이 됩니다.",kw:"소방안전관리",r:["fire2"],a:["elec","hvac","energy"],tr:["self","kfsi"],p:["출소 후 한국소방안전원 강습 신청","시험 합격 후 선임 자격 확보","아파트·건물 관리직 지원"]},
-  guard:{n:"경비원",d:"범죄경력에 따라 일정 기간 경비원으로 일할 수 없으니 사전 확인이 필수입니다.",kw:"경비",r:["guard"],a:["fire2","lic1","guardL"],tr:["guardEdu"],lim:["sex","violent","property","drug"],p:["범죄경력에 따른 결격 여부부터 확인","신임교육 이수","경비업체 지원"]},
+  guard:{n:"경비원",d:"범죄경력에 따라 일정 기간 경비원으로 일할 수 없으니 사전 확인이 필수입니다.",kw:"경비",r:["guard"],a:["fire2","lic1","guardL"],tr:["guardEdu"],lim:["sex","violent","property","drug"],p:["범죄경력 때문에 일할 수 없는지(결격 여부)부터 확인","신임교육 이수","경비업체 지원"]},
   carpaint:{n:"자동차 도장공",d:"사고 차량을 다시 칠하는 일로 정비공장·공업사 수요가 꾸준합니다.",kw:"자동차보수도장",r:["paint"],a:["car","lic1"],tr:["poly","card","q"],p:["필기 학습 (도장 재료·작업·안전)","훈련기관에서 실기 도장 연습","공업사·정비공장 보조로 시작"]},
   cmech:{n:"건설기계 정비사",d:"굴착기·지게차 같은 장비를 고치는 일로 건설기계 정비업체에서 일합니다.",kw:"건설기계정비",r:["cmech"],a:["excav","fork","car"],tr:["self","poly","card","q"],p:["필기는 수용 중 독학 가능","출소 후 훈련기관에서 엔진·유압 실습","건설기계 정비업체 보조로 시작"]},
   elecfix:{n:"전자기기 수리 기술자",d:"전자제품·설비를 조립하고 고치며 공장 설비 보수 일을 합니다.",kw:"전자",r:["elecd"],a:["elec","info"],tr:["self","poly","card","q"],p:["필기 학습 (전자회로 기초)","실기 회로 제작 연습","전자 제조·수리 업체 취업"]},
@@ -416,25 +468,25 @@ const ROLE = {
 };
 /* 범죄 유형별 취업 제한 — 결과지에는 범죄 유형 이름을 인쇄하지 않음 */
 const CRIMES = {
-  sex:{n:"성범죄",g:"법원이 취업제한명령을 선고했다면 정해진 기간(최대 10년) 동안 학교·학원·체육시설·의료기관 등 아동·청소년 관련기관과 장애인 복지시설 등에 취업할 수 없습니다. 택시·화물 운송 자격도 일정 기간 제한될 수 있습니다. 판결문에서 명령 여부와 기간을 확인하세요."},
-  abuse:{n:"아동·노인 학대",g:"아동 관련기관 또는 노인 관련기관(요양시설 등)에 일정 기간 취업이 제한될 수 있습니다."},
-  drug:{n:"마약류 범죄",g:"택시·화물 운송 자격은 일정 기간 취득할 수 없고, 요양보호사·반려동물행동지도사 등은 마약류 중독자를 결격사유로 둡니다. 경비원도 결격 여부를 확인해야 합니다."},
-  violent:{n:"폭력·강력 범죄",g:"살인·강도 등 강력범죄는 택시·화물 운송 자격이 일정 기간 제한되고, 경비원도 결격사유에 해당할 수 있습니다."},
+  sex:{n:"성범죄",g:"법원이 취업제한명령을 내렸다면 정해진 기간(최대 10년) 동안 학교·학원·체육시설·병원 등 아동·청소년이 다니는 곳과 장애인 복지시설에서 일할 수 없습니다. 택시·화물 운송 자격도 일정 기간 못 받을 수 있습니다. 판결문에서 명령이 있는지, 기간이 얼마인지 확인하세요."},
+  abuse:{n:"아동·노인 학대",g:"아동 관련 기관이나 노인 관련 기관(요양시설 등)에서 일정 기간 일할 수 없을 수 있습니다."},
+  drug:{n:"마약류 범죄",g:"택시·화물 운송 자격은 일정 기간 딸 수 없습니다. 마약류 중독자는 요양보호사·반려동물행동지도사 등의 자격을 받을 수 없습니다. 경비원도 될 수 있는지 확인해야 합니다."},
+  violent:{n:"폭력·강력 범죄",g:"살인·강도 등 강력범죄는 택시·화물 운송 자격을 일정 기간 딸 수 없고, 경비원도 될 수 없는 경우가 있습니다."},
   traffic:{n:"음주운전 등 교통 범죄",g:"운전면허가 취소됐다면 일정 기간 다시 딸 수 없고, 운전 관련 직업 자격에도 영향이 있습니다."},
-  property:{n:"절도·사기 등 재산 범죄",g:"경비원 등 일부 직업에 결격사유가 있고, 돈을 다루는 회계·금융 직종은 채용 과정에서 불리할 수 있습니다."},
-  any:{n:"그 밖의 범죄 (금고 이상 실형)",g:"요양보호사·사회복지사 등 일부 국가자격은 금고 이상의 실형을 받은 경우 집행이 끝난 뒤 일정 기간 결격사유가 됩니다."}
+  property:{n:"절도·사기 등 재산 범죄",g:"경비원 등 일부 직업은 될 수 없는 경우가 있고, 돈을 다루는 회계·금융 일은 채용 때 불리할 수 있습니다."},
+  any:{n:"그 밖의 범죄 (금고 이상 실형)",g:"요양보호사·사회복지사 등 일부 국가자격은 금고 이상의 실형(징역·금고형으로 실제 복역)을 받았다면 형을 마친 뒤 일정 기간 자격을 받을 수 없습니다."}
 };
 /* ===== 검정고시 (2026년 서울·경기 교육청 시행계획 기준, 2026년 10월 확인) ===== */
 const GED = {
   el:["초졸 검정고시",[["응시 자격","시험 전년도 기준 만 11세 이상이고 초등학교를 마치지 못한 사람 (초등학교 재학생은 응시 불가)"],["필수 과목","국어, 수학, 사회, 과학 (4과목)"],["선택 과목","도덕, 체육, 음악, 미술, 실과, 영어 중 2과목"],["문항·시간","과목당 20문항(문항당 5점), 2과목씩 묶어 교시당 40분"]],2],
-  mid:["중졸 검정고시",[["응시 자격","나이 제한 없음. 초등학교 졸업자 또는 초졸 검정고시 합격자 (중학교를 그만둔 경우 공고일 전에 정원외 관리 처리가 되어 있어야 함)"],["필수 과목","국어, 수학, 영어, 사회, 과학 (5과목)"],["선택 과목","도덕, 기술·가정, 체육, 음악, 미술, 정보 중 1과목"],["문항·시간","과목당 25문항(수학은 20문항), 국어·수학·영어 40분, 나머지 30분"]],2],
+  mid:["중졸 검정고시",[["응시 자격","나이 제한 없음. 초등학교 졸업자 또는 초졸 검정고시 합격자 (중학교를 그만둔 경우, 시험 공고일 전에 학교에서 학적 정리(정원외 관리)가 끝나 있어야 함)"],["필수 과목","국어, 수학, 영어, 사회, 과학 (5과목)"],["선택 과목","도덕, 기술·가정, 체육, 음악, 미술, 정보 중 1과목"],["문항·시간","과목당 25문항(수학은 20문항), 국어·수학·영어 40분, 나머지 30분"]],2],
   high:["고졸 검정고시",[["응시 자격","중학교 졸업자 또는 중졸 검정고시 합격자. 고등학교 재학생·졸업자는 응시 불가, 고교를 그만둔 날부터 공고일까지 6개월이 지나야 함"],["필수 과목","국어, 수학, 영어, 사회, 과학, 한국사 (6과목)"],["선택 과목","도덕, 기술·가정, 체육, 음악, 미술 중 1과목"],["문항·시간","과목당 25문항(수학은 20문항), 국어·수학·영어 40분, 나머지 30분"]],3]
 };
 const GED_COMMON = ["1년에 2회: 1회는 2월 공고·4월 시험, 2회는 6월 공고·8월 시험 (정확한 날짜는 교육청 공고 확인)","합격: 전 과목 평균 60점 이상 (과목별 최저점, 즉 과락은 없음). 결시한 과목이 있으면 안 됩니다","과목합격: 60점 이상 받은 과목은 다음 시험부터 면제받을 수 있어 몇 과목씩 나눠 합격해도 됩니다","출제: 2015 개정 교육과정 교과서 범위, 모두 4지선다 객관식","수용 중: 교정시설 검정고시반에서 공부하고 응시할 수 있습니다. 선발 기준과 시험 장소는 교육 담당에게 확인하세요"];
 const GED_STEPS = {e0:["el","mid","high"],e1:["mid","high"],e1b:["mid","high"],e2:["high"],e2b:["high"]};
 /* ===== 대학 진학 경로: [이름, 한 줄 설명, 안내처, [[항목, 내용]...]] (2026년 10월 확인) ===== */
 const UNIV = {
-  knou:["한국방송통신대학교","고졸 학력(고졸 검정고시 포함)이면 지원하는 국립 원격대학입니다. 필기시험 없이 고교·검정고시 성적으로 뽑습니다.","입학 문의 1577-2853, knou.ac.kr",[["모집 시기","1학기: 12월 초~1월 초 / 2학기: 6월 초~7월 초"],["기간·비용","4년(학사). 수업료는 학기당 약 34만~38만 원 (2026년 1학기, 학과마다 다름)"],["편입","학점은행제 30학점 이상이면 2학년, 63학점 이상이면 3학년 편입 지원 가능"],["수용 중","여주·전주·청주여자·포항교도소 등에서 방송대 과정 운영 (강의 영상을 내려받아 제공). 선발 여부는 교육 담당에게 문의"]]],
+  knou:["한국방송통신대학교","고졸 학력(고졸 검정고시 포함)이면 지원하는 국립 원격대학입니다. 필기시험 없이 고교·검정고시 성적으로 뽑습니다.",`입학 문의 ${CONTACT.knou}, knou.ac.kr`,[["모집 시기","1학기: 12월 초~1월 초 / 2학기: 6월 초~7월 초"],["기간·비용","4년(학사). 수업료는 학기당 약 34만~38만 원 (2026년 1학기, 학과마다 다름)"],["편입","학점은행제 30학점 이상이면 2학년, 63학점 이상이면 3학년 편입 지원 가능"],["수용 중","여주·전주·청주여자·포항교도소 등에서 방송대 과정 운영 (강의 영상을 내려받아 제공). 선발 여부는 교육 담당에게 문의"]]],
   cb:["학점은행제","수업과 자격증 등으로 학점을 쌓아 학위를 받습니다. 출소 후 일하면서 병행하기 좋습니다.","국가평생교육진흥원 cb.or.kr",[["학위 요건","학사 140학점(전공 60·교양 30), 전문학사 2년제 80학점(전공 45·교양 15)"],["자격증 학점","기사 20, 산업기사 16, 기능장 30학점. 기능사는 학점으로 인정되지 않습니다"],["비용","학습자 등록 4,000원, 학점인정 신청 1학점당 1,000원 (기초생활수급자 면제). 수업료는 교육기관마다 다름"],["한도","수업 학점은 1년에 최대 42학점까지 인정"]]],
   bsd:["독학학위제","4단계 시험에 모두 합격하면 학사학위를 받습니다. 혼자 공부하는 방식입니다.","국가평생교육진흥원 bdes.nile.or.kr",[["4단계","1과정 교양 → 2과정 전공기초 → 3과정 전공심화 → 4과정 학위취득 종합시험. 각 과정은 1년에 한 번 시험"],["합격","1~3과정은 과목별 60점 이상이면 그 과목 합격, 4과정은 총점 60% 이상 등"],["전공","국어국문, 영어영문, 심리, 경영, 법, 행정, 유아교육, 가정, 컴퓨터공학, 정보통신, 간호 (11개)"],["수용 중","교정시설 '학사고시반'(9개 전공)이 있습니다. 운영 시설은 교육 담당에게 문의"]]],
   cyber:["사이버대학","온라인 수업으로 학위를 받습니다. 생계와 병행하기 쉽습니다.","한국원격대학협의회(kcou.org), 각 대학 입학처",[["입학 자격","고졸 또는 고졸 검정고시 합격. 33학점 이상이면 2학년, 66학점 이상이면 3학년 편입"],["모집 시기","상반기 12월~1월, 하반기 6월~7월"],["비용","학교마다 다르니 입학처에 확인"]]],
@@ -500,25 +552,6 @@ function holSummary(){
   return `<p><b>나의 흥미 유형: ${top.map(t=>HOL[t].n).join(" · ")}</b></p><ul>${top.map(t=>`<li><b>${HOL[t].n}</b> ${HOL[t].d} <small>(어울리는 분야: ${HOL[t].f})</small></li>`).join("")}</ul>`;
 }
 /* ===== 지역별 출소 후 지원기관 (한국법무보호복지공단 누리집 교육원/지부 소개, 2026년 10월 확인) ===== */
-const KOREHA = {
-  "서울":[["서울지부","양천구 지양로 137","02-2605-3427"],["서울동부지부","송파구 오금로 509","02-3401-7046"],["서울서부지부","은평구 갈현로7길 5-14","02-385-3091"],["서울북부지부","도봉구 방학로8길 33","02-954-0657"],["서울동부기술교육원","송파구 오금로 509","02-6952-5181"]],
-  "부산":[["부산지부","사하구 낙동대로 640","051-294-1385"]],
-  "대구":[["대구지부","달서구 달구벌대로 1378, 3층","053-583-7965"]],
-  "인천":[["인천지부","서해구 서곶로 323, 3층","032-564-3858"],["인천기술교육원","서구 심곡로 86","032-561-6163"]],
-  "광주":[["광주지부","북구 동운로52번길 18","062-531-5731"],["광주남부지부","서구 월드컵4강로71번길 20","062-383-2751"]],
-  "대전":[["대전지부","중구 대둔산로350번길 19","042-581-0705"]],
-  "울산":[["울산지부","남구 돋질로 450","052-256-6960"],["울산기술교육원","남구 돋질로 450","052-249-4121"]],
-  "세종":[["대전지부 (세종 인근)","대전 중구 대둔산로350번길 19","042-581-0705"]],
-  "경기":[["경기지부","수원시 장안구 천천로 126","031-271-6189"],["경기남부지부","화성시 병점중앙로 154","031-232-5074"],["경기북부지부","의정부시 입석로 45","031-872-5183"],["경기동부지부","광주시 경충대로184번길 7-8","031-245-2653"]],
-  "강원":[["강원지부","춘천시 영서로 2953","033-242-5635"],["강원동부지부","강릉시 옥가로 56","033-647-3185"],["원주허그상담소","원주시 북원로 2551, 3층","033-742-8652"]],
-  "충북":[["충북지부","청주시 서원구 청남로1847번길 118","043-291-8329"]],
-  "충남":[["충남지부","홍성군 홍북읍 충서로2376번길 30","041-631-6750"],["충남기술교육원","홍성군 홍북읍 충서로2376번길 30","041-630-0800"],["천안허그상담소","천안시 서북구 서부5길 15, 3층","041-904-1011"]],
-  "전북":[["전북지부","전주시 완산구 쑥고개옛길 127-4","063-229-8140"],["전북기술교육원","전주시 완산구 쑥고개옛길 127-4","063-222-1560"]],
-  "전남":[["전남동부지부","여수시 만성로 210-30","061-655-6825"],["광주지부 (전남 서부 인근)","광주 북구 동운로52번길 18","062-531-5731"]],
-  "경북":[["경북지부","예천군 호명읍 봉호로 4057","054-652-6380"],["경북서부지부","구미시 형곡로22길 5-12","054-456-7689"],["경북기술교육원","예천군 호명읍 봉호로 4057","054-716-1661"]],
-  "경남":[["경남지부","창원시 의창구 동읍 의창대로 918","055-293-4465"],["경남서부지부","진주시 석갑로 135","055-744-6410"],["경남기술교육원","창원시 의창구 동읍 의창대로 918","055-291-7735"],["통영허그상담소","통영시 광도면 죽림4로 8, 2층","055-646-2888"]],
-  "제주":[["제주지부","제주시 기자길 70","064-759-8733"]]
-};
 const techEdu = r => (KOREHA[r]||[]).filter(x=>x[0].includes("기술교육원"));
 const esc = s => String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const stars = n => `<span class="stars">${"★".repeat(n)}${"☆".repeat(5-n)}</span>`;
@@ -530,7 +563,26 @@ const store = {
   set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
   ok(){ try{ localStorage.setItem("_t","1"); localStorage.removeItem("_t"); return true; }catch(e){ return false; } }
 };
-const cfg = () => store.get(CFG_KEY,{on:true,pin:""});
+/* 기록 저장은 처음에는 꺼져 있음(관리자가 켬). 이미 켜 둔 기기는 그 설정을 유지 */
+const cfg = () => store.get(CFG_KEY,{on:false});
+/* 관리자 비밀번호는 평문이 아니라 SHA-256(무작위 솔트 + 반복) 값만 저장. 외부 라이브러리 없이 직접 계산 */
+const sha256=(()=>{const K=[],H=[],f=x=>(x-Math.floor(x))*4294967296|0;
+  for(let n=2,c=0;c<64;n++){let p=1;for(let d=2;d*d<=n;d++)if(n%d===0){p=0;break;} if(p){if(c<8)H[c]=f(Math.sqrt(n));K[c++]=f(Math.cbrt(n));}}
+  const r=(x,n)=>(x>>>n)|(x<<(32-n));
+  return s=>{const b=[...new TextEncoder().encode(s)],l=b.length*8; b.push(128); while(b.length%64!==56)b.push(0); for(let i=7;i>=0;i--)b.push(i>3?0:(l>>>(i*8))&255);
+    const h=H.slice(),w=[];
+    for(let o=0;o<b.length;o+=64){
+      for(let i=0;i<64;i++){ if(i<16)w[i]=b[o+i*4]<<24|b[o+i*4+1]<<16|b[o+i*4+2]<<8|b[o+i*4+3]; else{const a=w[i-15],d=w[i-2]; w[i]=(w[i-16]+(r(a,7)^r(a,18)^(a>>>3))+w[i-7]+(r(d,17)^r(d,19)^(d>>>10)))|0;} }
+      let [A,B,C,D,E,F,G,I]=h;
+      for(let i=0;i<64;i++){ const t1=(I+(r(E,6)^r(E,11)^r(E,25))+((E&F)^(~E&G))+K[i]+w[i])|0, t2=((r(A,2)^r(A,13)^r(A,22))+((A&B)^(A&C)^(B&C)))|0; I=G;G=F;F=E;E=(D+t1)|0;D=C;C=B;B=A;A=(t1+t2)|0; }
+      [A,B,C,D,E,F,G,I].forEach((v,i)=>h[i]=(h[i]+v)|0);
+    }
+    return h.map(v=>(v>>>0).toString(16).padStart(8,"0")).join("");};})();
+const pinHash = (v,salt) => { let h=salt+":"+v; for(let i=0;i<3000;i++) h=sha256(h+salt); return h; };
+function pinSet(v){ const a=new Uint32Array(4); crypto.getRandomValues(a); const salt=[...a].map(x=>x.toString(36)).join(""); const c=cfg(); delete c.pin; store.set(CFG_KEY,{...c,salt,pinH:pinHash(v,salt)}); }
+/* 예전 판에서 평문으로 저장된 비밀번호는 맞게 입력하면 바로 해시로 바꿔 저장 */
+function pinOk(v){ const c=cfg(); if(c.pinH) return pinHash(v,c.salt)===c.pinH; if(c.pin&&v===c.pin){ pinSet(v); return true; } return false; }
+const hasPin = () => { const c=cfg(); return !!(c.pinH||c.pin); };
 let SID = "";
 const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const COLS = ["날짜","구분","출소 예정","지역","학력","진로 고민","진로 방향","흥미 탐색","흥미 유형","현실형","탐구형","예술형","사회형","진취형","관습형","관심 분야","희망 직업","준비 자격증","학업 목표","진학 경로"];
@@ -579,16 +631,16 @@ function modal(html,setup){
   document.body.appendChild(m); m.onclick=e=>{ if(e.target===m) m.remove(); };
   setup(m, ()=>m.remove());
 }
-function adminLogin(){
+function adminLogin(change){
   if(!store.ok()){ modal(`<h2>기록을 쓸 수 없습니다</h2><p>이 브라우저에서는 저장 기능이 막혀 있습니다. 파일을 Chrome으로 직접 열어 주세요.</p><div class="nav"><span></span><button class="go" id="mOk">확인</button></div>`,(m,c)=>m.querySelector("#mOk").onclick=c); return; }
-  const c0=cfg(), first=!c0.pin;
-  modal(`<h2>${first?"관리자 비밀번호 만들기":"관리자 확인"}</h2><p>${first?"숫자 4자리 이상으로 정해 주세요. 수형자가 기록을 보거나 지우지 못하게 합니다.":"비밀번호를 입력하세요."}</p>
+  const first=change||!hasPin();
+  modal(`<h2>${change?"새 비밀번호 정하기":first?"관리자 비밀번호 만들기":"관리자 확인"}</h2><p>${first?"숫자 4자리 이상(6자리 이상 권장)으로 정해 주세요. 수형자가 기록을 보거나 지우지 못하게 합니다. 비밀번호는 알아볼 수 없게 바꿔서(해시) 저장합니다.":"비밀번호를 입력하세요."}</p>
     <input type="password" inputmode="numeric" id="p1" placeholder="비밀번호" style="margin-top:14px">${first?`<input type="password" inputmode="numeric" id="p2" placeholder="한 번 더" style="margin-top:8px">`:""}
     <p id="pe" style="color:var(--warn);min-height:1.5em;margin-top:6px"></p><div class="nav"><button id="mNo">취소</button><button class="go" id="mYes">확인</button></div>`,(m,close)=>{
     const p1=m.querySelector("#p1"); p1.focus();
     const ok=()=>{ const v=p1.value.trim(), e=m.querySelector("#pe");
-      if(first){ if(!/^\d{4,}$/.test(v)){e.textContent="숫자 4자리 이상으로 입력하세요.";return;} if(v!==m.querySelector("#p2").value.trim()){e.textContent="두 번 입력한 값이 다릅니다.";return;} store.set(CFG_KEY,{...c0,pin:v}); }
-      else if(v!==c0.pin){ e.textContent="비밀번호가 다릅니다."; p1.value=""; return; }
+      if(first){ if(!/^\d{4,}$/.test(v)){e.textContent="숫자 4자리 이상으로 입력하세요.";return;} if(v!==m.querySelector("#p2").value.trim()){e.textContent="두 번 입력한 값이 다릅니다.";return;} pinSet(v); }
+      else if(!pinOk(v)){ e.textContent="비밀번호가 다릅니다."; p1.value=""; return; }
       close(); cur="admin"; render(); };
     m.querySelector("#mYes").onclick=ok; m.querySelector("#mNo").onclick=close;
     m.querySelectorAll("input").forEach(x=>x.onkeydown=e=>{ if(e.key==="Enter") ok(); });
@@ -600,18 +652,18 @@ function renderAdmin(){
   app.innerHTML=`<div class="topbar"><p class="step">관리자</p><button class="homebtn" id="out">나가기</button></div>
   <h1>익명 기록 모음</h1><p class="lead">이 기기에 저장된 기록입니다. 이름·수번·범죄 유형·직접 적은 글은 저장하지 않습니다.</p>
   <div class="kpis"><div><b>${db.length}</b><span>전체 기록</span></div><div><b>${countBy(db,"구분").find(x=>x[0]==="성인")?.[1]||0} / ${countBy(db,"구분").find(x=>x[0]==="소년")?.[1]||0}</b><span>성인 / 소년</span></div><div><b>${days.length?days[0].slice(5)+" ~ "+days[days.length-1].slice(5):"-"}</b><span>기간</span></div></div>
-  ${db.length?`<div class="stats">${statBox(db,"흥미 유형 (상위)","흥미 유형",true)}${statBox(db,"희망 직업","희망 직업",false,8)}${statBox(db,"진로 고민","진로 고민",true,8)}${statBox(db,"관심 분야","관심 분야",true)}${statBox(db,"진로 방향","진로 방향")}${statBox(db,"생활 지역","지역")}</div>`:`<p class="note">아직 기록이 없습니다. 상담을 끝까지 진행해 결과지 화면이 나오면 1건이 저장됩니다.</p>`}
+  ${db.length?`<div class="stats">${statBox(db,"흥미 유형 (상위)","흥미 유형",true)}${statBox(db,"희망 직업","희망 직업",false,8)}${statBox(db,"진로 고민","진로 고민",true,8)}${statBox(db,"관심 분야","관심 분야",true)}${statBox(db,"진로 방향","진로 방향")}${statBox(db,"생활 지역","지역")}</div>`:`<p class="note">${c.on?"아직 기록이 없습니다. 상담을 끝까지 진행해 결과지 화면이 나오면 1건이 저장됩니다.":"기록 저장이 꺼져 있습니다. 통계가 필요하면 아래 '기록 저장'을 켜세요. 켜면 결과지가 나올 때마다 1건씩 저장됩니다."}</p>`}
   <div class="admin-actions">
     <button class="go" id="dl"${db.length?"":" disabled"}>엑셀(CSV)로 내려받기</button>
     <label class="switch"><input type="checkbox" id="onoff"${c.on?" checked":""}> 기록 저장 ${c.on?"켜짐":"꺼짐"}</label>
     <button id="pin">비밀번호 바꾸기</button>
     <button id="wipe" class="danger"${db.length?"":" disabled"}>기록 모두 지우기</button>
   </div>
-  <p class="lead" style="margin-top:18px;font-size:14px">기록은 이 기기의 브라우저 안에만 있습니다. 브라우저 데이터를 지우거나 다른 기기·브라우저에서 열면 보이지 않으니, 주기적으로 내려받아 보관하세요.</p>`;
+  <p class="lead" style="margin-top:18px;font-size:14px">기록 저장은 처음에 꺼져 있습니다. 통계가 필요할 때만 켜세요. 기록은 이 기기의 브라우저 안에만 있어 브라우저 데이터를 지우면 사라지고, 지우지 않으면 이 기기에 남습니다. 정기적으로 내려받아 보관한 뒤 이 기기에서는 지우세요.</p>`;
   $("out").onclick=()=>{ cur="start"; render(); };
-  $("dl").onclick=download;
+  $("dl").onclick=()=>{ download(); modal(`<h2>내려받기를 시작했습니다</h2><p>파일이 저장된 것을 확인했다면, 다른 사람이 볼 수 없도록 이 기기의 기록을 지워 두는 것이 안전합니다.</p><div class="nav"><button id="mNo">나중에</button><button class="go danger" id="mYes">이 기기 기록 지우기</button></div>`,(m,close)=>{ m.querySelector("#mNo").onclick=close; m.querySelector("#mYes").onclick=()=>{ store.set(DB_KEY,[]); close(); renderAdmin(); }; }); };
   $("onoff").onchange=e=>{ store.set(CFG_KEY,{...cfg(),on:e.target.checked}); renderAdmin(); };
-  $("pin").onclick=()=>{ store.set(CFG_KEY,{...cfg(),pin:""}); adminLogin(); };
+  $("pin").onclick=()=>adminLogin(true);
   $("wipe").onclick=()=>modal(`<h2>기록을 모두 지울까요?</h2><p>${db.length}건이 지워지며 되돌릴 수 없습니다. 먼저 내려받았는지 확인하세요.</p><div class="nav"><button id="mNo">취소</button><button class="go danger" id="mYes">모두 지우기</button></div>`,(m,close)=>{ m.querySelector("#mNo").onclick=close; m.querySelector("#mYes").onclick=()=>{ store.set(DB_KEY,[]); close(); renderAdmin(); }; });
 }
 let NONE={}, S, cur;
@@ -633,12 +685,16 @@ function flow(){
   if(wantStudy()){ if(lowEdu()) f.push("goal"); if(wantUniv()) f.push("univ"); }
   f.push("result"); return f;
 }
-const topbar = label => `<div class="topbar"><p class="step">${label}</p><button class="homebtn" id="home">처음으로</button></div>`;
+const bigBtn = () => `<button class="homebtn txtbtn" data-big>${document.documentElement.classList.contains("big")?"글자 보통":"글자 크게"}</button>`;
+const topbar = label => `<div class="topbar"><p class="step">${label}</p><div class="tools">${bigBtn()}<button class="homebtn" id="home">처음으로</button></div></div>`;
+/* 큰 글씨: 화면 전체를 키움(인쇄 결과지는 그대로). 기기에 저장하지 않음 */
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-big]"); if(!b) return; const on=document.documentElement.classList.toggle("big"); document.querySelectorAll("[data-big]").forEach(x=>x.textContent=on?"글자 보통":"글자 크게"); });
 const bottom = ok => `<div class="nav"><button id="back">이전</button><button class="go" id="next"${ok?"":" disabled"}>다음</button></div>`;
-function bind(before){ $("back").onclick=()=>go(-1); $("home").onclick=home; $("next").onclick=()=>{ if(before) before(); go(1); }; }
-function home(){
+function bind(before){ $("back").onclick=()=>go(-1); $("home").onclick=()=>home(); $("next").onclick=()=>{ if(before) before(); go(1); }; }
+function home(end){
   const m=document.createElement("div"); m.className="modal no-print";
-  m.innerHTML=`<div class="box" role="dialog" aria-modal="true"><h2>처음 화면으로 갈까요?</h2><p>지금까지 고른 내용이 모두 지워집니다.</p><div class="nav"><button id="mNo">계속 진행</button><button class="go" id="mYes">처음으로</button></div></div>`;
+  m.innerHTML=end===true?`<div class="box" role="dialog" aria-modal="true"><h2>상담을 마칠까요?</h2><p>화면의 결과지와 고른 내용이 모두 지워지고 처음 화면으로 돌아갑니다. 다음 사람이 볼 수 없도록 상담이 끝나면 눌러 주세요.</p><div class="nav"><button id="mNo">돌아가기</button><button class="go" id="mYes">상담 마치기</button></div></div>`
+    :`<div class="box" role="dialog" aria-modal="true"><h2>처음 화면으로 갈까요?</h2><p>지금까지 고른 내용이 모두 지워집니다.</p><div class="nav"><button id="mNo">계속 진행</button><button class="go" id="mYes">처음으로</button></div></div>`;
   document.body.appendChild(m);
   const close=()=>m.remove();
   m.querySelector("#mNo").onclick=close; m.onclick=e=>{ if(e.target===m) close(); };
@@ -680,16 +736,17 @@ function render(){
   if(cur==="start"){
     app.innerHTML=`<div class="hero"><div class="mark"><svg width="38" height="38" viewBox="0 0 38 38" fill="none" aria-hidden="true"><path d="M6 31C14 31 12 19 19 19S25 11 32 11" stroke="#0F5C4E" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="0.1 5.5"/><circle cx="6" cy="31" r="3.5" fill="#0F5C4E"/><circle cx="32" cy="11" r="5" fill="#F2B33D"/></svg></div><h1>진로설계 도우미</h1><p class="lead">질문에 답하며 버튼만 누르면<br>취업·학업 정보를 정리한 A4 결과지가 만들어집니다.</p>
     <button class="go" id="startBtn">상담 시작하기</button><br><span class="offline">인터넷 없이 작동합니다. ${cfg().on&&store.ok()?"이름 없이 고른 내용만 통계용으로 이 기기에 저장됩니다.":"고른 내용은 저장되지 않습니다."}</span></div>
-    <button class="adminlink" id="adm">관리자</button>`;
-    $("startBtn").onclick=()=>go(1); $("adm").onclick=adminLogin; return;
+    <div class="startlinks"><span><button class="homebtn txtbtn" data-big>${document.documentElement.classList.contains("big")?"글자 보통":"글자 크게"}</button></span><span><button class="adminlink" id="adm">관리자</button></span></div>`;
+    $("startBtn").onclick=()=>go(1); $("adm").onclick=()=>adminLogin(); return;
   }
   if(cur==="admin"){ renderAdmin(); return; }
   if(cur==="result"){
     saveRecord();
-    app.innerHTML=`<div class="no-print">${topbar("완료")}<h1>결과지가 준비됐습니다</h1><p class="lead">내용을 확인한 뒤 인쇄하세요.</p></div>
+    app.innerHTML=`<div class="no-print">${topbar("완료")}<h1>결과지가 준비됐습니다</h1><p class="lead">첫 장은 상담 요약, 그다음 장부터는 상세 안내(별지)입니다. 요약만 인쇄하거나 전체를 인쇄할 수 있습니다.</p></div>
     <div class="sheet">${sheet()}</div>
-    <div class="nav no-print"><button id="back">이전</button><button class="go" id="next">A4로 인쇄</button></div>`;
-    $("back").onclick=()=>go(-1); $("next").onclick=()=>window.print(); $("home").onclick=home; return;
+    <div class="nav no-print"><button id="back">이전</button><span class="right"><button id="endBtn">상담 마치기</button><button id="printSum">요약 1장 인쇄</button><button class="go" id="next">전체 인쇄</button></span></div>`;
+    const pr=sumOnly=>{ document.body.classList.toggle("sum-only",sumOnly); window.print(); };
+    $("back").onclick=()=>go(-1); $("next").onclick=()=>pr(false); $("printSum").onclick=()=>pr(true); $("endBtn").onclick=()=>home(true); $("home").onclick=()=>home(); return;
   }
   if(cur==="jobEtc"){
     app.innerHTML=`${topbar(`${i} / ${total}`)}<h1>희망하는 직업을 적어 주세요</h1><p class="lead">결과지에 기록되며, 필요한 자격증은 상담 후 함께 확인하세요.</p>
@@ -732,6 +789,28 @@ function render(){
 }
 
 /* ===== 결과지 ===== */
+/* 1쪽 상담 요약: 상세 안내(별지)에서 핵심만 뽑아 한 장에 */
+function sumBox(){
+  const rows=[], li=a=>`<ol>${a.map(x=>`<li>${x}</li>`).join("")}</ol>`;
+  if(holDone()){ const t=holTop(), js=holJobs(); rows.push(["흥미 유형",(t.length?t.map(x=>HOL[x].n).join(", "):"뚜렷한 유형 없음")+(js.length?`<br><small>어울리는 직업: ${js.slice(0,6).map(k=>JOBS[k].n).join(", ")}${js.length>6?" 등":""}</small>`:"")]); }
+  if(wantJob()){
+    if(S.job==="etc") rows.push(["희망 직업",`${esc(S.jobEtc)||"목록에 없는 직업"} <small>(필요한 자격증은 상담 직원과 확인)</small>`]);
+    else if(S.job){ const j=JOBS[S.job], cs=[...j.r,...j.a].filter(k=>S.certs.includes(k));
+      rows.push(["희망 직업",j.n+(hits(S.job).length?`<span class="flag">취업 제한 확인 필요</span>`:"")+(youth()&&AGE[S.job]?`<span class="flag">만 ${AGE[S.job]}세 이상</span>`:"")]);
+      if(cs.length) rows.push(["준비할 자격증",cs.map(k=>`${CERT[k][0]} <small>(난이도 ${"★".repeat(CERT[k][5])}${"☆".repeat(5-CERT[k][5])})</small>`).join("<br>")]);
+      rows.push(["먼저 할 일",li(j.p.slice(0,3))]); }
+  }
+  if(wantStudy()){
+    const g=[]; if(youth()&&S.goal==="school") g.push("학교로 돌아가기(복학·재입학)");
+    if(wantGed()) g.push(...(GED_STEPS[S.edu]||[gedLevel()]).map(k=>GED[k][0]));
+    if(wantUniv()) g.push("대학 진학");
+    rows.push(["학업 목표",g.join(" → ")||"-"]);
+    if(wantUniv()) rows.push(["진학 경로",S.univ.length?S.univ.map(k=>UNIV[k][0]).join(", "):"모든 경로 (별지 참고)"]);
+  }
+  const k0=(KOREHA[S.region]||[])[0];
+  rows.push(["연락할 곳",[`한국법무보호복지공단 ${k0?`${k0[0]} ${k0[2]}, `:""}대표 ${CONTACT.koreha} <small>(숙식·취업·직업훈련 지원)</small>`,`고용노동부 고객상담센터 ${CONTACT.moel} <small>(일자리·내일배움카드)</small>`,...(youth()?[`청소년상담 ${CONTACT.youth}`]:[])].join("<br>")]);
+  return `<div class="sum"><h3>상담 요약</h3><table class="info">${rows.map(r=>`<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join("")}</table><p class="sum-more">자세한 내용은 다음 장부터 있는 '상세 안내(별지)'에 있습니다.</p></div>`;
+}
 function certBox(k){
   const c=CERT[k];
   return `<div class="cert"><div class="top"><span><b>${c[0]}</b><span class="tag${c[1]==="국가"?"":" p"}">${c[1]}</span> <small>${c[2]}</small></span><span>난이도 ${stars(c[5])}</span></div>
@@ -755,7 +834,7 @@ function sheet(){
   let h=`<div class="r-title"><h2>진로설계 결과지</h2><div class="r-qr"><div><small>${INFO_DATE}</small><small class="r-qrcap">휴대폰 카메라로 찍으면<br>이 프로그램을 다시 쓸 수 있습니다</small></div>${QR_SVG}</div></div>
   <table class="info"><tr><th>구분</th><td>${youth()?"소년":"성인"}</td><th>출소 예정</th><td>${S.release}</td></tr><tr><th>생활 지역</th><td colspan="3">${S.region}</td></tr>
   <tr><th>최종 학력</th><td>${eduName}</td><th>진로 방향</th><td>${dirName}</td></tr>
-  <tr><th>진로 고민</th><td colspan="3">${worries||"-"}</td></tr></table>`;
+  <tr><th>진로 고민</th><td colspan="3">${worries||"-"}</td></tr></table>${sumBox()}<div class="detail"><h2 class="detail-h">상세 안내 (별지)</h2>`;
   if(holDone()){ const js=holJobs();
     h+=`<div class="r-sec"><h3>직업 흥미 탐색 결과</h3>${holBars()}${holSummary()}${js.length?`<p>흥미에 어울리는 직업: ${js.map(k=>JOBS[k].n).join(", ")}</p>`:""}${wantStudy()?holMajors():""}<p><small>홀랜드 직업흥미 이론을 바탕으로 만든 간이 체크로, 표준화된 심리검사가 아닙니다. 정식 검사는 고용24의 직업선호도검사 S형(25분)·L형(60분)을 무료로 받을 수 있고, 지필검사는 고용복지플러스센터에서 받을 수 있습니다.</small></p></div>`; }
   if(wantJob()){
@@ -775,11 +854,11 @@ function sheet(){
     const gs=S.crimes.map(c=>CRIMES[c].g);
     if(gs.length) h+=`<div class="r-sec"><h3>취업 제한 확인 사항</h3><ul>${gs.map(g=>`<li>${g}</li>`).join("")}</ul><p><small>제한 여부와 기간은 판결 내용(취업제한명령 등)과 법 개정에 따라 다르므로 개별 확인이 필요합니다.</small></p></div>`;
   }
-  if(wantJob()&&youth()) h+=`<div class="r-sec"><h3>만 18세 미만이 일할 때 알아둘 점</h3><ul><li>취업할 때 가족관계증명서와 친권자(또는 후견인) 동의서가 필요합니다.</li><li>위험하거나 해로운 업무에는 일할 수 없고, 야간·휴일 근로는 본인 동의와 고용노동부 인가가 있어야 합니다.</li><li>부당한 대우를 받으면 고용노동부 고객상담센터(1350)에 상담하세요.</li></ul></div>`;
+  if(wantJob()&&youth()) h+=`<div class="r-sec"><h3>만 18세 미만이 일할 때 알아둘 점</h3><ul><li>취업할 때 가족관계증명서와 친권자(또는 후견인) 동의서가 필요합니다.</li><li>위험하거나 해로운 업무에는 일할 수 없고, 밤이나 휴일에 일하려면 본인 동의와 고용노동부 허가가 있어야 합니다.</li><li>부당한 대우를 받으면 고용노동부 고객상담센터(${CONTACT.moel})에 상담하세요.</li></ul></div>`;
   if(wantStudy()){
     const full=(REGIONS[S.region]||[""])[0];
     h+=`<div class="r-sec"><h3>학업 안내</h3>`;
-    if(youth()&&S.goal==="school") h+=`<div class="cert"><b>학교로 돌아가기 (복학·재입학)</b><ul><li>다니던 학교에 복학이나 재입학 절차를 문의하세요. 학교를 옮기려면 ${full||"거주 지역"} 관할 교육지원청에 편입학 절차를 문의합니다.</li><li>학교 밖 청소년 지원센터(꿈드림)에서 학업 복귀 상담과 검정고시 학습 지원을 받을 수 있습니다.</li><li>복학이 어렵다면 검정고시로 같은 학력을 얻을 수 있습니다.</li></ul></div>`;
+    if(youth()&&S.goal==="school") h+=`<div class="cert"><b>학교로 돌아가기 (복학·재입학)</b><ul><li>다니던 학교에 복학이나 재입학 절차를 문의하세요. 학교를 옮기려면 ${full||"거주 지역"}에서 사는 곳을 담당하는 교육지원청에 편입학 절차를 문의합니다.</li><li>학교 밖 청소년 지원센터(꿈드림)에서 학업 복귀 상담과 검정고시 학습 지원을 받을 수 있습니다.</li><li>복학이 어렵다면 검정고시로 같은 학력을 얻을 수 있습니다.</li></ul></div>`;
     if(wantGed()){
       const steps=GED_STEPS[S.edu]||[gedLevel()];
       if(steps.length>1) h+=`<p><b>학력 단계:</b> ${steps.map(k=>GED[k][0]).join(" → ")}${wantUniv()?" → 대학 진학":""} 순서로 준비합니다.</p>`;
@@ -797,16 +876,18 @@ function sheet(){
   h+=`<div class="r-sec"><h3>출소 후 도움받을 수 있는 곳 (${S.region||"전국"})</h3>
   <h4>한국법무보호복지공단: 숙식·긴급생활비·주거 지원, 허그일자리(취업), 직업훈련</h4>
   <table class="info"><tr><th>기관</th><th style="width:auto">주소</th><th>전화</th></tr>${ko.map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td style="white-space:nowrap">${x[2]}</td></tr>`).join("")}
-  <tr><td>대표번호</td><td>가까운 지부 안내, 보호사업 신청</td><td>1670-7004</td></tr></table>
+  <tr><td>대표번호</td><td>가까운 지부 안내, 보호사업 신청</td><td>${CONTACT.koreha}</td></tr></table>
   ${youth()?`<h4>청소년 지원 (${S.region||"거주 지역"})</h4><table class="info">
   <tr><td style="width:30%">학교 밖 청소년 지원센터 (꿈드림)</td><td>학업 복귀, 검정고시 학습, 직업체험·취업 지원. 시·군·구마다 있으며 꿈드림 누리집(kdream.or.kr)에서 가까운 센터를 찾습니다.</td></tr>
-  <tr><td>청소년상담 1388</td><td>고민 상담과 위기 지원. 전화 1388 (휴대전화는 지역번호+1388), 문자·카카오톡 상담도 됩니다.</td></tr>
+  <tr><td>청소년상담 ${CONTACT.youth}</td><td>고민 상담과 위기 지원. 전화 ${CONTACT.youth} (휴대전화는 지역번호+${CONTACT.youth}), 문자·카카오톡 상담도 됩니다.</td></tr>
   <tr><td>청소년 직업심리검사</td><td>고용24의 청소년 대상 검사는 회원가입 없이도 받을 수 있습니다.</td></tr></table>`:""}
   <h4>고용복지플러스센터 (${S.region||"거주 지역"})</h4>
-  <p>국민취업지원제도, 국민내일배움카드, 직업심리검사(무료). 가까운 센터는 고용노동부 고객상담센터 1350 또는 고용24 '센터 찾기'로 확인하세요.</p></div>
+  <p>국민취업지원제도, 국민내일배움카드, 직업심리검사(무료). 가까운 센터는 고용노동부 고객상담센터 ${CONTACT.moel} 또는 고용24 '센터 찾기'로 확인하세요.</p>
+  <p><small>위 주소·전화는 ${INFO_DATE}으로 확인한 것입니다. 바뀌었을 수 있으니 연결이 안 되면 대표번호(${CONTACT.koreha})로 문의하세요.</small></p></div></div>
   <div class="foot">이 결과지는 상담 참고용입니다. 시험 과목·일정·응시 자격, 훈련기관 과정, 취업 제한 법령은 바뀔 수 있으니 실제 준비 전 해당 기관의 최신 정보를 확인하세요.</div>`;
   return h;
 }
+window.addEventListener("afterprint",()=>document.body.classList.remove("sum-only"));
 reset();
 </script>
 </body>
