@@ -933,7 +933,7 @@ function screen(){
     case "edu": return ["최종 학력은 무엇인가요?","학력에 맞는 검정고시 단계를 자동으로 고릅니다.","single","edu",EDU.map(([v,b])=>({v,b}))];
     case "worry": return ["가장 고민되는 것을 모두 골라 주세요","여러 개를 고를 수 있습니다. 고른 내용으로 진로 방향을 추천합니다.","multi","worries",WORRY.filter(w=>!w[3]||w[3]===(youth()?"y":"a")).map(([v,b])=>({v,b}))];
     case "dir": { const r=recDir(); return ["어떤 길을 준비할까요?",r?"고민 내용을 보고 추천 표시를 했습니다.":"원하는 방향을 골라 주세요.","single","dir",[{v:"job",b:"취업",s:"직업과 자격증 정보"},{v:"study",b:"학업",s:"검정고시와 대학 진학 정보"},{v:"both",b:"취업과 학업 모두",s:"두 가지 정보를 함께"}].map(o=>({...o,rec:o.v===r})),"one"]; }
-    case "holAsk": return ["직업 흥미 탐색을 해볼까요?","좋아하는 활동을 고르면 흥미 유형(홀랜드 이론)과 어울리는 직업을 찾아 줍니다. 5개 화면, 약 3분 걸립니다.","single","hol",[{v:"yes",b:"해볼게요",s:"결과가 결과지에 들어갑니다",rec:S.worries.includes("w8")},{v:"skip",b:"건너뛰기",s:"바로 다음 단계로"}],"one"];
+    case "holAsk": return ["직업 흥미 탐색을 해볼까요?","좋아하는 활동으로 알아보는 간이 탐색입니다. 흥미 유형(홀랜드 이론)과 어울리는 직업을 찾아 줍니다. 5개 화면, 약 3분 걸립니다.","single","hol",[{v:"yes",b:"해볼게요",s:"결과가 결과지에 들어갑니다",rec:S.worries.includes("w8")},{v:"skip",b:"건너뛰기",s:"바로 다음 단계로"}],"one"];
     case "h1": case "h2": case "h3": case "h4": case "h5": { const q=HOL_Q[+cur[1]-1]; return ["해보고 싶거나 즐거울 것 같은 활동을 모두 골라 주세요","잘하는지는 상관없습니다. 마음이 끌리는 것만 고르세요.","multi",cur,[...Object.entries(q).map(([v,b])=>({v,b})),{v:"none",b:"끌리는 것이 없어요"}]]; }
     case "crime": return ["해당하는 범죄 유형을 골라 주세요","취업이 제한될 수 있는 직업을 표시합니다. 여러 개를 고를 수 있으며, 범죄 유형 이름은 결과지에 인쇄되지 않습니다.","multi","crimes",[...Object.entries(CRIMES).map(([v,c])=>({v,b:c.n})),{v:"none",b:"해당 없음 / 선택 안 함"}]];
     case "cat": return ["관심 있는 분야를 모두 골라 주세요","여러 개를 고를 수 있습니다. 고른 분야의 직업을 다음 화면에서 함께 보여 줍니다.","multi","cats",CATS.map(c=>({v:c.id,b:c.n,s:c.s,rec:c.jobs.some(k=>holJobs().includes(k))}))];
@@ -1135,7 +1135,7 @@ function sheet(){
   <tr><th>최종 학력</th><td>${eduName}</td><th>진로 방향</th><td>${dirName}</td></tr>
   <tr><th>진로 고민</th><td colspan="3">${worries||"-"}</td></tr></table>${sumBox()}<div class="detail"><h2 class="detail-h">상세 안내 (별지)</h2>${planBox()}`;
   if(holDone()){ const js=holJobs();
-    h+=`<div class="r-sec"><h3>직업 흥미 탐색 결과</h3>${holBars()}${holSummary()}${js.length?`<p>흥미에 어울리는 직업: ${js.map(k=>JOBS[k].n).join(", ")}</p>`:""}${wantStudy()?holMajors():""}<p><small>홀랜드 직업흥미 이론을 바탕으로 만든 간이 체크로, 표준화된 심리검사가 아닙니다. 정식 검사는 고용24의 직업선호도검사 S형(25분)·L형(60분)을 무료로 받을 수 있고, 지필검사는 고용복지플러스센터에서 받을 수 있습니다.</small></p></div>`; }
+    h+=`<div class="r-sec"><h3>직업 흥미 탐색 결과 (간이 탐색)</h3>${holBars()}${holSummary()}${js.length?`<p>흥미에 어울리는 직업: ${js.map(k=>JOBS[k].n).join(", ")}</p>`:""}${wantStudy()?holMajors():""}<p><small>홀랜드 직업흥미 이론을 바탕으로 만든 간이 탐색입니다. 정식 검사는 고용24의 직업선호도검사 S형(25분)·L형(60분)을 무료로 받을 수 있고, 지필검사는 고용복지플러스센터에서 받을 수 있습니다.</small></p></div>`; }
   if(wantJob()){
     const K=jk(), M=moreJ();
     if(K){
