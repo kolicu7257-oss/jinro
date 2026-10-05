@@ -116,6 +116,8 @@ button.danger{color:#A3261B!important;border-color:#E6B8B2!important}
 table.info{width:100%;border-collapse:collapse;margin-bottom:12px}
 table.info th,table.info td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
 table.info th{background:var(--soft);width:18%;font-weight:600}
+table.plan th{width:24%!important}
+table.plan ul{margin:0;padding-left:18px}
 .r-sec{margin:14px 0}
 .r-sec h3{font-size:15.5px;margin:0 0 6px;padding-left:8px;border-left:4px solid var(--accent);break-after:avoid}
 .r-sec h4{font-size:14px;margin:10px 0 4px;break-after:avoid}
@@ -207,6 +209,9 @@ html.big .shell,html.big .modal .box{zoom:1.22}
    3. 파일을 열어 성인·소년 결과지를 끝까지 만들고 인쇄 미리보기로 확인합니다.
    4. 기관 PC의 파일과 공개 주소(index.html)를 새 파일로 바꿉니다. */
 const INFO_DATE = "2026년 10월 기준";
+/* 자격증 정보 확인일과 발급 기관별 공식 확인처. 자격 정보를 다시 확인하면 CERT_DATE를 바꿉니다 */
+const CERT_DATE = "2026년 10월 확인";
+const CERT_SRC = {"한국산업인력공단":"큐넷 q-net.or.kr","한국소방안전원":"한국소방안전원 kfsi.or.kr","도로교통공단":"안전운전 통합민원 safedriving.or.kr","한국커피협회 등 발급 기관":"민간자격정보서비스 pqi.or.kr","한국교통안전공단":"국가자격시험 lic.kotsa.or.kr","한국보건의료인국가시험원":"국시원 kuksiwon.or.kr","한국사회복지사협회":"한국사회복지사협회 welfare.net","농림축산식품부":"반려동물행동지도사 자격정보시스템 apms.epis.or.kr/pet","민간 발급 기관":"민간자격정보서비스 pqi.or.kr","대한상공회의소":"license.korcham.net","한국생산성본부":"license.kpc.or.kr","한국세무사회":"license.kacpta.or.kr","한국정보통신진흥협회":"ihd.or.kr","한국정보통신자격협회":"icqa.or.kr","경비업법 지정 교육기관":"경찰청·관할 경찰서 (경비업법)"};
 const CONTACT = {koreha:"1670-7004", moel:"1350", youth:"1388", knou:"1577-2853"};
 const REGIONS = {
   "서울":["서울특별시",["서울정수캠퍼스(용산구)","서울강서캠퍼스(강서구)"]],
@@ -367,7 +372,22 @@ const TRAIN = {
   kacpta:(j,r)=>["시험 접수","한국세무사회 자격시험 누리집 (license.kacpta.or.kr)"],
   hug:(j,r)=>["출소 후 지원",`한국법무보호복지공단 ${r} 지역 지부: 직업훈련 연계와 취업 지원`]
 };
-/* ===== 직업: r=꼭 필요한 자격증, a=있으면 좋은 자격증, tr=배울 수 있는 곳, lim=제한 가능 범죄 유형 ===== */
+/* 법으로 정해진 자격·면허가 있는 직업: [해당 자격 키, 근거 요약]. 여기 없는 r은 '취업 준비의 핵심 자격'(법적 필수 아님) */
+const LAW = {
+  hair:[["hair"],"공중위생관리법: 미용 업무를 하려면 미용사 면허(시·군·구 발급)가 있어야 합니다."],
+  barber:[["barber"],"공중위생관리법: 이용 업무를 하려면 이용사 면허(시·군·구 발급)가 있어야 합니다."],
+  truck:[["lic1","cargo"],"화물자동차 운수사업법: 사업용 화물차를 운전하려면 운전면허와 화물운송종사자격이 있어야 합니다."],
+  taxi:[["lic1","taxi"],"여객자동차 운수사업법: 택시를 운전하려면 운전면허와 택시운전자격이 있어야 합니다."],
+  forklift:[["fork"],"건설기계관리법: 3톤 이상 지게차는 조종사 면허(지게차운전기능사)가 있어야 하고, 3톤 미만은 교육 이수로 면허를 받을 수 있습니다(확인 필요)."],
+  excav:[["excav"],"건설기계관리법: 굴착기는 조종사 면허(굴착기운전기능사)가 있어야 하고, 3톤 미만 소형은 교육 이수로 면허를 받을 수 있습니다(확인 필요)."],
+  carer:[["carer"],"노인장기요양보험법: 요양시설·재가기관에서 요양 업무를 하려면 요양보호사 자격이 있어야 합니다."],
+  social:[["social"],"사회복지사업법: 사회복지시설에서 사회복지사로 일하려면 자격이 있어야 합니다."],
+  fire:[["fire2"],"화재예방법: 건물의 소방안전관리자로 선임되려면 해당 등급 자격이 있어야 합니다."],
+  guard:[["guard"],"경비업법: 일반경비원은 신임교육을 이수해야 배치될 수 있습니다(예외 확인 필요)."],
+  haz:[["haz"],"위험물안전관리법: 위험물안전관리자로 선임되려면 위험물 자격이나 정해진 교육 이수가 필요합니다(확인 필요)."]
+};
+const lawCerts = k => (LAW[k]||[[]])[0];
+/* ===== 직업: r=핵심 자격증(법적 필수 여부는 LAW), a=있으면 좋은 자격증, tr=배울 수 있는 곳, lim=제한 가능 범죄 유형 ===== */
 const JOBS = {
   weld:{n:"용접사",d:"조선·건설·제조 현장 수요가 꾸준하고 숙련도에 따라 임금이 오릅니다.",kw:"용접",r:["weld1","weld2"],a:["fork","weldI"],tr:["inside","poly","kigan","card","q"],p:["교정시설 직업훈련(용접) 지원","필기 학습 후 실기 연습","출소 후 국비 훈련으로 심화, 현장 취업"]},
   elec:{n:"전기 기술자",d:"건물·설비 유지보수 수요가 많고 상위 자격으로 성장 경로가 분명합니다.",kw:"전기",r:["elec"],a:["fire2","elecI"],tr:["inside","poly","kigan","card","q"],p:["필기 학습 (계산 문제가 있어 기초 수학 복습 권장)","실기 배선 작업 연습","시설관리·전기공사 업체 취업 후 경력 쌓기"]},
@@ -673,7 +693,7 @@ const youth = () => S.who==="youth";
 const gedLevel = () => ({e0:"el",e1:"mid",e1b:"mid"})[S.edu] || "high";
 const wantJob = () => S.dir==="job"||S.dir==="both";
 const wantStudy = () => S.dir==="study"||S.dir==="both";
-const wantGed = () => wantStudy() && lowEdu() && (S.goal==="ged"||S.goal==="both");
+const wantGed = () => wantStudy() && lowEdu() && ["ged","univ","both"].includes(S.goal);
 const wantUniv = () => wantStudy() && (!lowEdu() || S.goal==="univ"||S.goal==="both");
 const AGE={truck:20,taxi:20,guard:18,dog:18,excav:18,forklift:18};
 const ageNote = k => youth()&&AGE[k] ? `만 ${AGE[k]}세 이상 취득 가능` : "";
@@ -721,8 +741,8 @@ function screen(){
     case "crime": return ["해당하는 범죄 유형을 골라 주세요","취업이 제한될 수 있는 직업을 표시합니다. 여러 개를 고를 수 있으며, 범죄 유형 이름은 결과지에 인쇄되지 않습니다.","multi","crimes",[...Object.entries(CRIMES).map(([v,c])=>({v,b:c.n})),{v:"none",b:"해당 없음 / 선택 안 함"}]];
     case "cat": return ["관심 있는 분야를 모두 골라 주세요","여러 개를 고를 수 있습니다. 고른 분야의 직업을 다음 화면에서 함께 보여 줍니다.","multi","cats",CATS.map(c=>({v:c.id,b:c.n,s:c.s,rec:c.jobs.some(k=>holJobs().includes(k))}))];
     case "job": { const cs=CATS.filter(c=>S.cats.includes(c.id)), one=cs.length===1; return [one?`${cs[0].n} 분야에서 희망하는 직업은?`:"희망하는 직업을 하나 골라 주세요",one?"":"고른 분야별로 직업을 모았습니다.","single","job",[...cs.flatMap(c=>c.jobs.map(k=>({v:k,g:one?"":c.n,b:JOBS[k].n,s:[hits(k).length?"취업 제한 가능 · 확인 필요":"",ageNote(k)].filter(Boolean).join(" · "),w:hits(k).length>0||!!ageNote(k),rec:holJobs().includes(k)}))),{v:"etc",g:one?"":"그 밖의 직업",b:"목록에 없어요",s:"직접 적기"}]]; }
-    case "cert": { const j=JOBS[S.job], mk=(k,g)=>{const c=CERT[k]; return {v:k,g,b:c[0],s:`${c[1]} · 난이도 ${"★".repeat(c[5])}${"☆".repeat(5-c[5])}`};}; return [`${j.n}${josa(j.n)} 되려면 이런 자격증이 필요합니다`,j.d+" 준비할 자격증을 골라 주세요.","multi","certs",[...j.r.map(k=>mk(k,"꼭 필요한 자격증")),...j.a.map(k=>mk(k,"있으면 좋은 자격증"))]]; }
-    case "goal": return ["학업은 어디까지 준비할까요?","대학에 가려면 먼저 고등학교 졸업 학력이 필요합니다.","single","goal",[...(youth()?[{v:"school",b:"학교로 돌아가기",s:"복학·재입학으로 졸업하기",rec:S.worries.includes("w9")}]:[]),{v:"ged",b:GED[gedLevel()][0],s:"학력부터 갖추기",rec:!(youth()&&S.worries.includes("w9"))},{v:"univ",b:"대학 진학",s:"검정고시 합격 후 진학 경로"},{v:"both",b:"검정고시와 대학 진학 모두",s:"단계별로 함께 안내"}],"one"];
+    case "cert": { const j=JOBS[S.job], mk=(k,g)=>{const c=CERT[k]; return {v:k,g,b:c[0],s:`${c[1]} · 난이도 ${"★".repeat(c[5])}${"☆".repeat(5-c[5])}`};}; const lw=lawCerts(S.job); return [`${j.n} 관련 자격증입니다`,(LAW[S.job]?"이 직업은 법으로 정해진 자격·면허가 있습니다.":"이 직업은 법으로 꼭 필요한 자격은 없지만, 채용 때 자격증을 보는 곳이 많습니다.")+" 준비할 자격증을 골라 주세요.","multi","certs",[...j.r.map(k=>mk(k,lw.includes(k)?"법으로 정해진 자격·면허":"취업 준비의 핵심 자격 (법적 필수 아님)")),...j.a.map(k=>mk(k,"있으면 좋은 자격증"))]]; }
+    case "goal": return ["학업은 어디까지 준비할까요?","대학에 가려면 먼저 고등학교 졸업 학력이 필요합니다.","single","goal",[...(youth()?[{v:"school",b:"학교로 돌아가기",s:"복학·재입학으로 졸업하기",rec:S.worries.includes("w9")}]:[]),{v:"ged",b:GED[gedLevel()][0],s:"학력부터 갖추기",rec:!(youth()&&S.worries.includes("w9"))},{v:"both",b:"대학 진학까지",s:"검정고시부터 대학 진학까지 차례로 안내"}],"one"];
     case "univ": return ["관심 있는 진학 경로를 골라 주세요","고르지 않으면 모든 경로를 안내합니다.","multi","univ",Object.entries(UNIV).map(([v,u])=>({v,b:u[0],s:u[1].split(".")[0]+"."}))];
   }
 }
@@ -797,7 +817,7 @@ function sumBox(){
     if(S.job==="etc") rows.push(["희망 직업",`${esc(S.jobEtc)||"목록에 없는 직업"} <small>(필요한 자격증은 상담 직원과 확인)</small>`]);
     else if(S.job){ const j=JOBS[S.job], cs=[...j.r,...j.a].filter(k=>S.certs.includes(k));
       rows.push(["희망 직업",j.n+(hits(S.job).length?`<span class="flag">취업 제한 확인 필요</span>`:"")+(youth()&&AGE[S.job]?`<span class="flag">만 ${AGE[S.job]}세 이상</span>`:"")]);
-      if(cs.length) rows.push(["준비할 자격증",cs.map(k=>`${CERT[k][0]} <small>(난이도 ${"★".repeat(CERT[k][5])}${"☆".repeat(5-CERT[k][5])})</small>`).join("<br>")]);
+      if(cs.length) rows.push(["준비할 자격증",cs.map(k=>`${CERT[k][0]}${lawCerts(S.job).includes(k)?' <span class="flag">법적 필수</span>':""} <small>(난이도 ${"★".repeat(CERT[k][5])}${"☆".repeat(5-CERT[k][5])})</small>`).join("<br>")]);
       rows.push(["먼저 할 일",li(j.p.slice(0,3))]); }
   }
   if(wantStudy()){
@@ -807,14 +827,60 @@ function sumBox(){
     rows.push(["학업 목표",g.join(" → ")||"-"]);
     if(wantUniv()) rows.push(["진학 경로",S.univ.length?S.univ.map(k=>UNIV[k][0]).join(", "):"모든 경로 (별지 참고)"]);
   }
+  const pl=releasePlan(); rows.push(["출소까지 준비",`<b>지금</b> ${pl.now[0]}<br><b>출소 전</b> ${pl.before[wantJob()&&JOBS[S.job]&&hits(S.job).length?2:1]}<br><small>출소 시기별 계획은 별지 첫 쪽에 있습니다.</small>`]);
   const k0=(KOREHA[S.region]||[])[0];
   rows.push(["연락할 곳",[`한국법무보호복지공단 ${k0?`${k0[0]} ${k0[2]}, `:""}대표 ${CONTACT.koreha} <small>(숙식·취업·직업훈련 지원)</small>`,`고용노동부 고객상담센터 ${CONTACT.moel} <small>(일자리·내일배움카드)</small>`,...(youth()?[`청소년상담 ${CONTACT.youth}`]:[])].join("<br>")]);
   return `<div class="sum"><h3>상담 요약</h3><table class="info">${rows.map(r=>`<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join("")}</table><p class="sum-more">자세한 내용은 다음 장부터 있는 '상세 안내(별지)'에 있습니다.</p></div>`;
 }
+/* 출소 예정 시기별 준비 계획: 지금 할 일 → 출소 전 확인할 일 → 출소 후 첫 연락처 */
+function releasePlan(){
+  const r=S.release, jobOn=wantJob()&&S.job&&S.job!=="etc", j=jobOn?JOBS[S.job]:null;
+  const cert=jobOn&&S.certs.length?CERT[S.certs[0]][0]:(jobOn?j.n+" 관련 자격증":"");
+  const steps=wantGed()?(GED_STEPS[S.edu]||[gedLevel()]).map(k=>GED[k][0]):[], ged=steps[0]||"";
+  const school=youth()&&S.goal==="school", univ=wantUniv(), etc=wantJob()&&S.job==="etc";
+  const now=[], before=[], after=[];
+  if(r==="6개월 이내"){
+    if(jobOn) now.push(`${cert} 시험 과목을 미리 공부해 출소 후 가장 빠른 회차에 응시하기`);
+    if(ged) now.push(`${ged} 과목 중 자신 있는 과목부터 공부하기 (출소 후 4월·8월 회차 응시)`);
+    now.push("출소 후 지낼 곳과 연락할 가족·지인 정리하기");
+  } else if(r==="6개월~1년"){
+    if(jobOn) now.push("교정시설 직업훈련 과정과 수용 중 자격시험 응시가 가능한지 상담 직원에게 묻기",`${cert} 필기 합격을 목표로 공부하기`);
+    if(ged) now.push(`교정시설 검정고시반을 신청해 ${ged} 다음 회차(4월·8월) 응시하기`);
+  } else if(r==="1~3년"){
+    if(jobOn) now.push(`교정시설 직업훈련 과정에 지원해 ${cert} 취득을 목표로 하기`);
+    if(ged) now.push(`검정고시반에서 ${steps.join(" → ")} 차례로 합격하기`);
+    now.push("독서·컴퓨터 등 기본기를 꾸준히 다지기");
+  } else if(r==="3년 이상"){
+    if(ged) now.push(`먼저 학력부터 갖추기: ${steps.join(" → ")}`);
+    if(jobOn) now.push(`직업훈련으로 ${cert}부터 따고, 경력이 쌓이면 관련 자격을 하나씩 더 준비하기`);
+    now.push("1년마다 상담 직원과 이 계획을 다시 점검하기");
+  }
+  if(univ) now.push(ged?"검정고시 합격 뒤 진학할 학교와 학과를 미리 알아보기":"진학할 학교의 모집 시기와 학과를 알아보기");
+  if(etc) now.push("희망 직업에 필요한 자격증과 훈련 과정을 상담 직원과 확인하기");
+  if(school) now.push("교정시설 안의 학습 과정(검정고시반 등)에서 다니던 학년의 국어·영어·수학 공부 이어가기");
+  if(!jobOn&&!ged&&!univ&&!school&&!etc) now.push("흥미 탐색 결과와 관심 분야를 보고 희망 직업 정하기");
+  if(!now.length) now.push("수용 중 들을 수 있는 공부·직업훈련 과정을 상담 직원과 확인하기");
+  before.push("신분증(주민등록증) 상태와 출소 후 주소지 확인하기","한국법무보호복지공단 지원(숙식·취업·직업훈련)을 신청하는 방법을 상담 직원과 확인하기");
+  if(jobOn&&hits(S.job).length) before.push("희망 직업의 취업 제한 여부와 기간을 판결 내용과 함께 확인하기");
+  if(wantJob()) before.push("고용24 가입과 국민내일배움카드 신청 방법 알아두기");
+  if(school) before.push("복학·재입학할 학교나 가까운 꿈드림 센터 알아보기");
+  else if(youth()) before.push("보호자와 출소 후 생활·학업 계획 이야기하기");
+  if(ged) before.push(`출소 후 생활할 지역 교육청 누리집에서 검정고시 공고 일정 확인하기`);
+  else if(univ) before.push("진학할 학교의 원서 접수 시기 확인하기");
+  const k0=(KOREHA[S.region]||[])[0];
+  after.push(`한국법무보호복지공단 ${k0?k0[0]+" "+k0[2]:"대표 "+CONTACT.koreha} (첫 주 안에 숙식·취업 지원 상담)`);
+  if(wantJob()||!youth()) after.push(`고용복지플러스센터 ${CONTACT.moel} (국민취업지원제도·내일배움카드)`);
+  if(youth()) after.push(`학교 밖 청소년 지원센터(꿈드림) · 청소년상담 ${CONTACT.youth}`);
+  return {now,before,after,soon:r==="6개월 이내"};
+}
+function planBox(){
+  const p=releasePlan(), ul=a=>`<ul>${a.map(x=>`<li>${x}</li>`).join("")}</ul>`;
+  return `<div class="r-sec"><h3>출소 시기별 준비 계획 (출소 예정: ${S.release||"미정"})</h3><table class="info plan"><tr><th>지금 할 일<br><small>수용 중</small></th><td>${ul(p.now)}</td></tr><tr><th>출소 전 확인할 일<br><small>${p.soon?"지금부터":"출소 3~6개월 전"}</small></th><td>${ul(p.before)}</td></tr><tr><th>출소 후 첫 연락처</th><td>${ul(p.after)}</td></tr></table></div>`;
+}
 function certBox(k){
   const c=CERT[k];
   return `<div class="cert"><div class="top"><span><b>${c[0]}</b><span class="tag${c[1]==="국가"?"":" p"}">${c[1]}</span> <small>${c[2]}</small></span><span>난이도 ${stars(c[5])}</span></div>
-  <dl><dt>필기</dt><dd>${c[3]}</dd><dt>실기</dt><dd>${c[4]}</dd></dl></div>`;
+  <dl><dt>필기</dt><dd>${c[3]}</dd><dt>실기</dt><dd>${c[4]}</dd><dt>확인처</dt><dd>${CERT_SRC[c[2]]||c[2]} <small>(${CERT_DATE})</small></dd></dl></div>`;
 }
 function trainBox(j){
   const r=S.region||"거주 지역", keys=j.tr||["card"];
@@ -834,7 +900,7 @@ function sheet(){
   let h=`<div class="r-title"><h2>진로설계 결과지</h2><div class="r-qr"><div><small>${INFO_DATE}</small><small class="r-qrcap">휴대폰 카메라로 찍으면<br>이 프로그램을 다시 쓸 수 있습니다</small></div>${QR_SVG}</div></div>
   <table class="info"><tr><th>구분</th><td>${youth()?"소년":"성인"}</td><th>출소 예정</th><td>${S.release}</td></tr><tr><th>생활 지역</th><td colspan="3">${S.region}</td></tr>
   <tr><th>최종 학력</th><td>${eduName}</td><th>진로 방향</th><td>${dirName}</td></tr>
-  <tr><th>진로 고민</th><td colspan="3">${worries||"-"}</td></tr></table>${sumBox()}<div class="detail"><h2 class="detail-h">상세 안내 (별지)</h2>`;
+  <tr><th>진로 고민</th><td colspan="3">${worries||"-"}</td></tr></table>${sumBox()}<div class="detail"><h2 class="detail-h">상세 안내 (별지)</h2>${planBox()}`;
   if(holDone()){ const js=holJobs();
     h+=`<div class="r-sec"><h3>직업 흥미 탐색 결과</h3>${holBars()}${holSummary()}${js.length?`<p>흥미에 어울리는 직업: ${js.map(k=>JOBS[k].n).join(", ")}</p>`:""}${wantStudy()?holMajors():""}<p><small>홀랜드 직업흥미 이론을 바탕으로 만든 간이 체크로, 표준화된 심리검사가 아닙니다. 정식 검사는 고용24의 직업선호도검사 S형(25분)·L형(60분)을 무료로 받을 수 있고, 지필검사는 고용복지플러스센터에서 받을 수 있습니다.</small></p></div>`; }
   if(wantJob()){
@@ -846,13 +912,16 @@ function sheet(){
       if(youth()&&AGE[S.job]) h+=`<div class="warnbox"><b>나이 요건.</b> 이 직업에 필요한 자격·면허는 만 ${AGE[S.job]}세 이상부터 취득할 수 있습니다. 출소 시 나이를 확인하고, 그 전까지는 필기 공부와 기초 기술을 준비하세요.</div>`;
       if(j.note) h+=`<p><small>${j.note}</small></p>`;
       const req=j.r.filter(k=>S.certs.includes(k)), add=j.a.filter(k=>S.certs.includes(k));
-      if(req.length) h+=`<h4>꼭 필요한 자격증 <small style="font-weight:400;color:var(--sub)">(난이도는 참고용 체감 수준)</small></h4>`+req.map(certBox).join("");
+      const lw=lawCerts(S.job), legal=req.filter(k=>lw.includes(k)), core=req.filter(k=>!lw.includes(k)), dn=`<small style="font-weight:400;color:var(--sub)">(난이도는 참고용 체감 수준)</small>`;
+      if(legal.length) h+=`<h4>법으로 정해진 자격·면허 ${dn}</h4><p><small>${LAW[S.job][1]}</small></p>`+legal.map(certBox).join("");
+      if(core.length) h+=`<h4>취업 준비의 핵심 자격 ${legal.length?"":dn}</h4><p><small>법으로 꼭 있어야 하는 자격은 아니지만, 채용할 때 요구하거나 우대하는 곳이 많습니다.</small></p>`+core.map(certBox).join("");
       if(add.length) h+=`<h4>있으면 좋은 자격증</h4>`+add.map(certBox).join("");
       if([...req,...add].some(k=>CERT[k][2]===KS)) h+=`<p><small>한국산업인력공단 기능사 등급은 학력·경력 응시 제한이 없습니다(산업기사 이상은 응시자격 필요). 과목 구성은 큐넷(q-net.or.kr) 출제기준에서 최신 내용을 확인하세요.</small></p>`;
       h+=`<h4>준비 순서</h4><ol>${j.p.map(s=>`<li>${s}</li>`).join("")}</ol>${trainBox(j)}${roleBox(S.job)}</div>`;
     }
     const gs=S.crimes.map(c=>CRIMES[c].g);
-    if(gs.length) h+=`<div class="r-sec"><h3>취업 제한 확인 사항</h3><ul>${gs.map(g=>`<li>${g}</li>`).join("")}</ul><p><small>제한 여부와 기간은 판결 내용(취업제한명령 등)과 법 개정에 따라 다르므로 개별 확인이 필요합니다.</small></p></div>`;
+    /* 결과지에는 범죄 유형을 짐작할 수 있는 문장(CRIMES[].g)을 넣지 않음. 자세한 내용은 자격증 화면에서만 보여 줌 */
+    if(gs.length) h+=`<div class="r-sec"><h3>취업 제한 확인 사항</h3><p>범죄경력에 따라 일부 직업은 자격 취득이나 취업이 일정 기간 제한될 수 있습니다. 제한 여부와 기간은 판결 내용(취업제한명령 등)과 법 개정에 따라 다르므로, 준비를 시작하기 전에 상담 직원과 함께 개별로 확인하세요.</p></div>`;
   }
   if(wantJob()&&youth()) h+=`<div class="r-sec"><h3>만 18세 미만이 일할 때 알아둘 점</h3><ul><li>취업할 때 가족관계증명서와 친권자(또는 후견인) 동의서가 필요합니다.</li><li>위험하거나 해로운 업무에는 일할 수 없고, 밤이나 휴일에 일하려면 본인 동의와 고용노동부 허가가 있어야 합니다.</li><li>부당한 대우를 받으면 고용노동부 고객상담센터(${CONTACT.moel})에 상담하세요.</li></ul></div>`;
   if(wantStudy()){
@@ -866,7 +935,7 @@ function sheet(){
       h+=`<h4>검정고시 공통 안내</h4><ul>${GED_COMMON.map(x=>`<li>${x}</li>`).join("")}${(REGIONS[S.region]||[""])[0]?`<li>출소 후에는 ${(REGIONS[S.region]||[""])[0]}교육청 누리집의 검정고시 공고를 확인하세요.</li>`:""}</ul>`;
     }
     if(wantUniv()){
-      if(lowEdu()) h+=`<div class="warnbox">대학에 진학하려면 고등학교 졸업 학력이 필요합니다. 고졸 검정고시 합격 후 아래 경로를 준비하세요.</div>`;
+      if(lowEdu()) h+=`<div class="warnbox">대학에 진학하려면 고등학교 졸업 학력이 필요합니다. 위의 검정고시 단계를 먼저 마친 뒤 아래 경로를 준비하세요.</div>`;
       const us=(S.univ.length?S.univ:Object.keys(UNIV)).map(k=>UNIV[k]);
       h+=`<h4>대학 진학 경로</h4>`+us.map(u=>`<div class="cert"><b>${u[0]}</b><br>${u[1]}<dl class="wide">${u[3].map(x=>`<dt>${x[0]}</dt><dd>${x[1]}</dd>`).join("")}<dt>안내처</dt><dd>${u[2]}</dd></dl></div>`).join("");
     }
