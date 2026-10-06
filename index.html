@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>진로설계 도우미</title>
+<!-- 홈 화면 앱(공개 주소에서만 쓰임. 파일·data: 주소로 열 때는 무시됨) -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0F5C4E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="진로설계">
 <style>
 :root{
   --bg:#EDF1EF; --paper:#FFFFFF; --ink:#16302A; --sub:#5A6B66; --line:#D3DCD8;
@@ -1302,6 +1309,12 @@ function sheet(){
 }
 window.addEventListener("afterprint",()=>document.body.classList.remove("sum-only"));
 reset();
+</script>
+<script>
+/* 홈 화면 앱: https 공개 주소에서만 오프라인 저장(sw.js)을 켭니다. 파일이나 data: 주소로 열면 아무것도 하지 않습니다. */
+if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost")){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
 </script>
 </body>
 </html>
