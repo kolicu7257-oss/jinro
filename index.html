@@ -814,7 +814,7 @@ function makeRecord(){
     wantJob()?CATS.filter(c=>S.cats.includes(c.id)).map(c=>c.n).join(" / "):"",
     wantJob()?(jk()?JOBS[jk()].n:S.job==="etc"?(moreJ()?moreJ().n+" (목록 외)":"목록 외 직업"):""):"",
     wantJob()&&jk()?S.certs.map(k=>CERT[k][0]).join(" / "):"",
-    wantStudy()?goalName:"", wantStudy()&&wantUniv()?S.univ.map(k=>UNIV[k][0]).join(" / "):"", wantJob()?(S.biz==="yes"?"있음":S.biz==="no"?"없음":""):""];
+    wantStudy()?goalName:"", wantStudy()&&wantUniv()?S.univ.map(k=>UNIV[k][0]).join(" / "):"", wantJob()?(S.biz==="yes"?"있음 ("+(BIZ_ST.find(x=>x[0]===bizSt())||[,""])[1]+")":S.biz==="no"?"없음":""):""];
 }
 /* 결과지에 도달할 때 저장. 같은 회차에서 다시 고치면 덮어씀 */
 function saveRecord(){
@@ -884,12 +884,13 @@ function renderAdmin(){
   $("wipe").onclick=()=>modal(`<h2>기록을 모두 지울까요?</h2><p>${db.length}건이 지워지며 되돌릴 수 없습니다. 먼저 내려받았는지 확인하세요.</p><div class="nav"><button id="mNo">취소</button><button class="go danger" id="mYes">모두 지우기</button></div>`,(m,close)=>{ m.querySelector("#mNo").onclick=close; m.querySelector("#mYes").onclick=()=>{ store.set(DB_KEY,[]); close(); renderAdmin(); }; });
 }
 let NONE={}, S, cur;
-function reset(){ NONE={}; SID=""; S={who:"",release:"",region:"",edu:"",worries:[],dir:"",crimes:[],cats:[],job:"",jobEtc:"",etcK:"",certs:[],biz:"",goal:"",univ:[],hol:"",h1:[],h2:[],h3:[],h4:[],h5:[]}; cur="start"; render(); }
+function reset(){ NONE={}; SID=""; S={who:"",release:"",region:"",edu:"",worries:[],dir:"",crimes:[],cats:[],job:"",jobEtc:"",etcK:"",certs:[],biz:"",bizSt:"",goal:"",univ:[],hol:"",h1:[],h2:[],h3:[],h4:[],h5:[]}; cur="start"; render(); }
 const lowEdu = () => ["e0","e1","e1b","e2","e2b"].includes(S.edu);
 const youth = () => S.who==="youth";
 const gedLevel = () => ({e0:"el",e1:"mid",e1b:"mid"})[S.edu] || "high";
 const wantJob = () => S.dir==="job"||S.dir==="both";
 const wantBiz = () => wantJob() && S.biz==="yes";
+const bizSt = () => S.bizSt||"idea";
 const wantStudy = () => S.dir==="study"||S.dir==="both";
 const wantGed = () => wantStudy() && lowEdu() && ["ged","univ","both"].includes(S.goal);
 const wantUniv = () => wantStudy() && (!lowEdu() || S.goal==="univ"||S.goal==="both");
@@ -899,7 +900,7 @@ const hits = k => (JOBS[k].lim||[]).filter(c=>S.crimes.includes(c));
 function flow(){
   const f=["start","who","release","region","edu","worry","dir","holAsk"];
   if(holDone()) f.push("h1","h2","h3","h4","h5","hres");
-  if(wantJob()){ f.push("crime","cat","job"); if(S.job==="etc") f.push("jobEtc"); if(jk()) f.push("cert"); f.push("biz"); }
+  if(wantJob()){ f.push("crime","cat","job"); if(S.job==="etc") f.push("jobEtc"); if(jk()) f.push("cert"); f.push("biz"); if(S.biz==="yes") f.push("bizSt"); }
   if(wantStudy()){ if(lowEdu()) f.push("goal"); if(wantUniv()) f.push("univ"); }
   f.push("result"); return f;
 }
@@ -941,6 +942,7 @@ function screen(){
     case "job": { const cs=CATS.filter(c=>S.cats.includes(c.id)), one=cs.length===1; return [one?`${cs[0].n} 분야에서 희망하는 직업은?`:"희망하는 직업을 하나 골라 주세요",one?"":"고른 분야별로 직업을 모았습니다.","single","job",[...cs.flatMap(c=>c.jobs.map(k=>({v:k,g:one?"":c.n,b:JOBS[k].n,s:[hits(k).length?"취업 제한 가능 · 확인 필요":"",ageNote(k)].filter(Boolean).join(" · "),w:hits(k).length>0||!!ageNote(k),rec:holJobs().includes(k)}))),{v:"etc",g:one?"":"그 밖의 직업",b:"목록에 없어요",s:"직접 적기"}]]; }
     case "cert": { const K=jk(), j=JOBS[K], mk=(k,g)=>{const c=CERT[k]; return {v:k,g,b:c[0],s:`${c[1]} · 난이도 ${"★".repeat(c[5])}${"☆".repeat(5-c[5])}`};}; const lw=lawCerts(K); return [`${j.n} 관련 자격증입니다`,(S.job==="etc"?`직접 적은 직업('${esc(S.jobEtc)}')을 목록의 '${j.n}' 안내로 이어 갑니다. `:"")+(LAW[K]?"이 직업은 법으로 정해진 자격·면허가 있습니다.":"이 직업은 법으로 꼭 필요한 자격은 없지만, 채용 때 자격증을 보는 곳이 많습니다.")+" 준비할 자격증을 골라 주세요.","multi","certs",[...j.r.map(k=>mk(k,lw.includes(k)?"법으로 정해진 자격·면허":"취업 준비의 핵심 자격 (법적 필수 아님)")),...j.a.map(k=>mk(k,"있으면 좋은 자격증"))]]; }
     case "biz": { const M=moreJ(); return ["나중에 내 가게나 사업을 차릴 생각이 있나요?",youth()?"있다고 고르면, 지금은 기술과 일 경험을 먼저 쌓고 성인이 된 뒤 창업을 준비하는 방법을 결과지에 안내합니다.":"있다고 고르면 창업 준비 순서, 필요한 신고·허가, 도움받을 수 있는 기관을 결과지에 안내합니다.","single","biz",[{v:"yes",b:"있어요",s:"창업 준비 안내가 결과지에 들어갑니다",rec:!!(M&&M.n===JOB_MORE.biz.n)},{v:"no",b:"지금은 생각 없어요",s:"취업 안내만 봅니다"}],"one"]; }
+    case "bizSt": return ["창업 준비는 어느 정도 되어 있나요?","고른 단계에 맞춰 결과지의 창업 준비 순서와 조언이 달라집니다.","single","bizSt",BIZ_ST.filter(x=>!(youth()&&x[0]==="own")).map(x=>({v:x[0],b:x[1],s:x[2]})),"one"];
     case "goal": return ["학업은 어디까지 준비할까요?","대학에 가려면 먼저 고등학교 졸업 학력이 필요합니다.","single","goal",[...(youth()?[{v:"school",b:"학교로 돌아가기",s:"복학·재입학으로 졸업하기",rec:S.worries.includes("w9")}]:[]),{v:"ged",b:GED[gedLevel()][0],s:"학력부터 갖추기",rec:!(youth()&&S.worries.includes("w9"))},{v:"both",b:"대학 진학까지",s:"검정고시부터 대학 진학까지 차례로 안내"}],"one"];
     case "univ": return ["관심 있는 진학 경로를 골라 주세요","고르지 않으면 모든 경로를 안내합니다.","multi","univ",Object.entries(UNIV).map(([v,u])=>({v,b:u[0],s:u[1].split(".")[0]+"."}))];
   }
@@ -948,7 +950,7 @@ function screen(){
 
 function render(){
   const f=flow(), i=f.indexOf(cur), app=$("app"), total=f.length-2;
-  const G=[["기본 정보",["who","release","region","edu","worry","dir"]],["흥미 탐색",["holAsk","h1","h2","h3","h4","h5","hres"]],["취업",["crime","cat","job","jobEtc","cert","biz"]],["학업",["goal","univ"]],["결과지",["result"]]].filter(g=>g[1].some(k=>f.includes(k)));
+  const G=[["기본 정보",["who","release","region","edu","worry","dir"]],["흥미 탐색",["holAsk","h1","h2","h3","h4","h5","hres"]],["취업",["crime","cat","job","jobEtc","cert","biz","bizSt"]],["학업",["goal","univ"]],["결과지",["result"]]].filter(g=>g[1].some(k=>f.includes(k)));
   const gi=G.findIndex(g=>g[1].includes(cur));
   $("route").style.display=cur==="start"||cur==="admin"?"none":"flex";
   $("route").innerHTML=G.map((g,n)=>`<li class="${n<gi?"done":n===gi?"now":""}"><span class="dot"></span>${g[0]}</li>`).join("");
@@ -1028,7 +1030,7 @@ function sumBox(){
       rows.push(["먼저 할 일",li(M.p)]); }
     else if(S.job==="etc") rows.push(["희망 직업",`${esc(S.jobEtc)||"목록에 없는 직업"} <small>(자세한 자료가 없는 직업이라 별지에 알아보는 순서를 적었습니다)</small>`]);
   }
-  if(wantBiz()) rows.push(["창업 준비",youth()?"지금은 기술과 일 경험 쌓기 → 성인이 된 뒤 창업 교육 → 지원 신청<br><small>미성년자는 사업자등록 등에 보호자 동의 필요 (별지 '창업 준비 안내')</small>":`같은 업종에서 일하며 경험 쌓기 → 창업 교육 → 지원 신청${bizInd()?` <small>(${bizInd()[0]}: 업종별 신고 필요)</small>`:""}<br><small>법무보호복지공단 창업 지원 · 소상공인 창업 교육 1357 (별지 '창업 준비 안내')</small>`]);
+  if(wantBiz()){ const st=BIZ_ST.find(x=>x[0]===bizSt()), b=bizSteps(); rows.push(["창업 준비",youth()?`<b>${st[3]}</b> · 지금은 기술과 일 경험 쌓기, 성인이 된 뒤 창업 <small>(보호자 동의 필요, 별지 참고)</small>`:`<b>${st[3]}</b>: ${b.slice(0,3).map(x=>x[0]).join(" → ")} <small>(별지에 나에게 맞춘 조언)</small>`]); }
   if(wantStudy()){
     const g=[]; if(youth()&&S.goal==="school") g.push("학교로 돌아가기(복학·재입학)");
     if(wantGed()) g.push(...(GED_STEPS[S.edu]||[gedLevel()]).map(k=>GED[k][0]));
@@ -1069,9 +1071,13 @@ function releasePlan(){
   if(M&&M.study&&!univ) now.push("대학 학위가 필요한 직업이니 학력(검정고시)과 대학 진학 계획도 함께 세우기");
   if(school) now.push("교정시설 안의 학습 과정(검정고시반 등)에서 다니던 학년의 국어·영어·수학 공부 이어가기");
   if(!jobOn&&!ged&&!univ&&!school&&!etc) now.push("흥미 탐색 결과와 관심 분야를 보고 희망 직업 정하기");
-  if(wantBiz()){ const jn=bizJob();
-    now.push(youth()?"창업은 성인이 된 뒤의 목표로 두고, 지금은 하고 싶은 업종의 기술부터 배우기":`창업하고 싶은 업종을 정하고 ${jn?jn+" 기술·자격":"그 업종의 기술·자격"}부터 준비하기 (창업은 같은 업종에서 일해 본 뒤가 안전합니다)`);
-    if(r==="1~3년"||r==="3년 이상") now.push("교정시설 안에 창업·경제 교육이 있는지 상담 직원에게 묻기"); }
+  if(wantBiz()){ const jn=bizJob(), st=bizSt();
+    now.push(youth()?"창업은 성인이 된 뒤의 목표로 두고, 지금은 하고 싶은 업종의 기술부터 배우기"
+      :st==="idea"?"창업하고 싶은 업종 후보를 2~3개 적고, 그중 하나를 골라 필요한 기술·자격 알아보기"
+      :st==="field"?`${jn?jn+" 기술·자격":"정한 업종의 기술·자격"}부터 준비하기 (창업은 같은 업종에서 일해 본 뒤가 안전합니다)`
+      :st==="exp"?"일해 본 가게에서 배운 것(재료 구입처, 원가, 손님 응대)을 노트에 정리하고, 부족한 자격 준비하기"
+      :"지난 가게가 잘된 점과 어려웠던 점, 남은 빚을 정리해 다시 시작할 계획의 바탕 만들기");
+    if(r==="1~3년"||r==="3년 이상") now.push("교정시설 안에 창업·경제 교육이 있는지 상담 직원에게 묻고, 장부 쓰기·세금 기초 공부하기"); }
   if(!now.length) now.push("수용 중 들을 수 있는 공부·직업훈련 과정을 상담 직원과 확인하기");
   before.push("신분증(주민등록증) 상태와 출소 후 주소지 확인하기","한국법무보호복지공단 지원(숙식·취업·직업훈련)을 신청하는 방법을 상담 직원과 확인하기");
   if(limOn()) before.push("희망 직업의 취업 제한 여부와 기간을 판결 내용과 함께 확인하기");
@@ -1110,6 +1116,43 @@ function roleBox(k){
 /* 결과지 오른쪽 위 QR: 공개 주소 https://kolicu7257-oss.github.io/jinro/ (인터넷 없이 그려지는 SVG) */
 const QR_SVG=`<svg class="r-qrimg" viewBox="0 0 33 33" shape-rendering="crispEdges" role="img" aria-label="진로설계 도우미 주소 QR코드"><rect width="33" height="33" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h4v1h-4zM17 2h1v1h-1zM19 2h4v1h-4zM24 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h1v1h-1zM14 3h2v1h-2zM17 3h2v1h-2zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM11 4h1v1h-1zM13 4h1v1h-1zM17 4h1v1h-1zM19 4h3v1h-3zM24 4h1v1h-1zM26 4h3v1h-3zM30 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM13 5h2v1h-2zM16 5h1v1h-1zM20 5h3v1h-3zM24 5h1v1h-1zM26 5h3v1h-3zM30 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM11 6h4v1h-4zM16 6h3v1h-3zM20 6h1v1h-1zM24 6h1v1h-1zM26 6h3v1h-3zM30 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM17 7h5v1h-5zM24 7h1v1h-1zM30 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h7v1h-7zM11 9h1v1h-1zM13 9h2v1h-2zM16 9h6v1h-6zM2 10h1v1h-1zM5 10h1v1h-1zM7 10h2v1h-2zM10 10h1v1h-1zM12 10h1v1h-1zM14 10h2v1h-2zM17 10h2v1h-2zM22 10h2v1h-2zM25 10h1v1h-1zM3 11h2v1h-2zM7 11h1v1h-1zM9 11h3v1h-3zM18 11h1v1h-1zM22 11h3v1h-3zM27 11h1v1h-1zM30 11h1v1h-1zM2 12h11v1h-11zM14 12h1v1h-1zM20 12h2v1h-2zM25 12h5v1h-5zM3 13h2v1h-2zM15 13h1v1h-1zM20 13h1v1h-1zM24 13h1v1h-1zM26 13h1v1h-1zM28 13h2v1h-2zM2 14h2v1h-2zM7 14h3v1h-3zM11 14h1v1h-1zM14 14h1v1h-1zM16 14h4v1h-4zM21 14h4v1h-4zM27 14h1v1h-1zM29 14h2v1h-2zM2 15h2v1h-2zM9 15h2v1h-2zM12 15h4v1h-4zM19 15h4v1h-4zM3 16h2v1h-2zM6 16h4v1h-4zM11 16h2v1h-2zM14 16h3v1h-3zM19 16h1v1h-1zM22 16h9v1h-9zM5 17h3v1h-3zM12 17h1v1h-1zM18 17h2v1h-2zM21 17h2v1h-2zM26 17h2v1h-2zM29 17h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM6 18h1v1h-1zM8 18h2v1h-2zM11 18h1v1h-1zM13 18h3v1h-3zM17 18h1v1h-1zM19 18h1v1h-1zM22 18h1v1h-1zM29 18h1v1h-1zM3 19h4v1h-4zM9 19h1v1h-1zM12 19h1v1h-1zM15 19h2v1h-2zM19 19h1v1h-1zM22 19h1v1h-1zM24 19h2v1h-2zM27 19h1v1h-1zM30 19h1v1h-1zM2 20h1v1h-1zM5 20h2v1h-2zM8 20h2v1h-2zM14 20h1v1h-1zM16 20h1v1h-1zM20 20h1v1h-1zM23 20h3v1h-3zM29 20h2v1h-2zM4 21h3v1h-3zM9 21h1v1h-1zM11 21h1v1h-1zM14 21h1v1h-1zM16 21h1v1h-1zM19 21h1v1h-1zM21 21h2v1h-2zM26 21h1v1h-1zM29 21h2v1h-2zM2 22h1v1h-1zM6 22h1v1h-1zM8 22h3v1h-3zM13 22h2v1h-2zM17 22h2v1h-2zM22 22h5v1h-5zM28 22h1v1h-1zM10 23h3v1h-3zM16 23h1v1h-1zM18 23h3v1h-3zM22 23h1v1h-1zM26 23h1v1h-1zM28 23h3v1h-3zM2 24h7v1h-7zM11 24h1v1h-1zM13 24h1v1h-1zM18 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM29 24h1v1h-1zM2 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM13 25h2v1h-2zM16 25h2v1h-2zM20 25h3v1h-3zM26 25h3v1h-3zM30 25h1v1h-1zM2 26h1v1h-1zM4 26h3v1h-3zM8 26h1v1h-1zM12 26h1v1h-1zM14 26h1v1h-1zM17 26h3v1h-3zM22 26h5v1h-5zM29 26h2v1h-2zM2 27h1v1h-1zM4 27h3v1h-3zM8 27h1v1h-1zM10 27h4v1h-4zM15 27h1v1h-1zM19 27h1v1h-1zM21 27h1v1h-1zM23 27h7v1h-7zM2 28h1v1h-1zM4 28h3v1h-3zM8 28h1v1h-1zM11 28h1v1h-1zM15 28h1v1h-1zM18 28h1v1h-1zM20 28h2v1h-2zM23 28h1v1h-1zM26 28h3v1h-3zM30 28h1v1h-1zM2 29h1v1h-1zM8 29h1v1h-1zM14 29h2v1h-2zM18 29h2v1h-2zM22 29h2v1h-2zM26 29h1v1h-1zM29 29h1v1h-1zM2 30h7v1h-7zM10 30h1v1h-1zM13 30h1v1h-1zM17 30h1v1h-1zM19 30h4v1h-4zM24 30h1v1h-1zM27 30h1v1h-1zM29 30h1v1h-1z"/></svg>`;
 /* ===== 창업 준비 안내 ===== */
+const BIZ_ST=[["idea","막연히 생각만 있어요","어떤 가게를 할지 아직 몰라요","업종 찾기 단계"],["field","하고 싶은 업종은 정했어요","그 일을 해 본 적은 없어요","기술·경험 쌓기 단계"],["exp","그 업종에서 일해 본 적이 있어요","직원·아르바이트 경험 포함","창업 계획 단계"],["own","가게를 운영해 본 적이 있어요","다시 시작하고 싶어요","재창업 단계"]];
+/* 준비 단계별 순서: [제목, 설명] */
+function bizSteps(){
+  const jn=bizJob(), st=bizSt(), ht=holDone()?holTop():[], hj=holDone()?holJobs().slice(0,3).map(k=>JOBS[k].n):[];
+  const edu=["창업 교육 듣기","소상공인 창업 교육·상담으로 가게 자리, 비용, 세금, 손님 모으는 법 배우기"],
+    plan=["사업 계획 세우기","처음 드는 돈(보증금·장비·재료)과 한 달 고정비, 한 달에 팔아야 할 양을 적어 보기"],
+    sup=["지원 신청·신고","한국법무보호복지공단 창업 지원 등 조건에 맞는 지원을 상담 후 신청하고, 사업자등록과 업종별 신고를 마치기"];
+  if(st==="idea") return [["업종 찾기",(jn?`희망 직업 '${jn}' 일을 살려 할 수 있는 가게가 무엇인지부터 알아보세요.${hj.length&&!hj.includes(jn)?` 흥미 탐색으로는 ${hj.join(", ")} 같은 일도 어울리니 함께 비교해 보세요.`:""}`:hj.length?`흥미 탐색 결과로 보면 ${hj.join(", ")} 같은 일이 어울립니다. 이 중 가게로 이어질 수 있는 일을 골라 보세요.`:"내가 잘하거나 오래 해도 질리지 않을 일을 적어 보고, 그 일로 할 수 있는 가게를 찾아보세요.")],
+    ["기술·경험 쌓기","고른 업종의 자격과 기술을 배우고, 같은 업종에서 적어도 1~2년 일해 보기"],edu,plan,sup];
+  if(st==="field") return [["기술·자격 준비",`${jn?jn+" 관련 ":""}자격과 기술을 먼저 갖추기`],["같은 업종에서 일해 보기","손님 응대, 재료 구입, 하루 매출이 어떻게 돌아가는지 직접 보며 1~2년 경험 쌓기"],edu,plan,sup];
+  if(st==="exp") return [["경험 정리하기","일했던 곳에서 배운 것(재료 구입처, 원가, 단골 관리, 바쁜 시간대)을 노트에 정리하고 부족한 자격 채우기"],["상권 알아보기","가게를 낼 동네의 유동 인구, 비슷한 가게 수, 임대료를 소상공인24 상권 정보로 확인하기"],plan,edu,sup];
+  return [["지난 가게 돌아보기","잘된 점과 어려웠던 점(자리, 가격, 비용, 사람)을 적어 같은 실수를 줄이기"],["빚·신용 정리","남은 빚이 있으면 신용회복위원회(1600-5500)에서 채무조정을 먼저 상담하기"],["재창업 상담","소상공인시장진흥공단의 재창업 교육·지원이 있는지 1357로 확인하기(확인 필요)"],["작게 다시 시작","처음보다 작은 규모로 시작해 매출이 안정되면 넓히기"],sup];
+}
+/* 출소 시기와 준비 단계로 정하는 창업 시간표 */
+function bizTime(){
+  const r=S.release, st=bizSt(), ex=st==="exp"||st==="own";
+  if(youth()) return "만 19세가 될 때까지는 기술을 배우고 일해 보는 시기로 삼고, 성인이 된 뒤 창업 교육부터 시작하세요.";
+  return ({"6개월 이내":ex?"출소가 가깝습니다. 경험이 있어도 출소하자마자 창업하기보다 6개월~1년 일하며 생활비와 신용을 정리한 뒤 시작하는 것이 안전합니다.":"출소가 가깝습니다. 먼저 취업으로 생활을 안정시키고, 일하면서 1~2년 뒤 창업을 목표로 잡는 것이 현실적입니다.",
+    "6개월~1년":"남은 기간에 자격 필기 공부와 '창업 아이디어 노트'(하고 싶은 가게, 필요한 돈, 손님층)를 만들고, 출소 후 같은 업종에서 일하며 준비하세요.",
+    "1~3년":"수용 중 직업훈련으로 자격을 따 두면 출소 후 바로 같은 업종에서 일할 수 있어 창업까지 걸리는 시간이 줄어듭니다.",
+    "3년 이상":"시간이 넉넉합니다. 자격을 하나씩 쌓고 장부 쓰기·세금 같은 경제 기초를 공부해 두세요. 출소 무렵 업종 사정이 바뀌었을 수 있으니 1년마다 계획을 다시 점검하세요."})[r]||"";
+}
+const BIZ_HOL={R:"손기술이 강점입니다. 수리·시공·공방처럼 기술로 하는 1인 창업이 잘 맞을 수 있습니다.",I:"꼼꼼히 알아보는 힘이 강점입니다. 상권과 원가를 숫자로 따져 보는 데 이 힘을 쓰세요.",A:"만드는 감각이 강점입니다. 공방·디저트·꽃처럼 내 솜씨가 드러나는 가게가 어울릴 수 있습니다. 가격 정하기와 장부 관리는 따로 배워 두세요.",S:"사람을 돕는 마음이 강점입니다. 단골 손님을 만드는 서비스업에서 큰 힘이 됩니다.",E:"앞장서서 설득하는 힘이 강점입니다. 영업과 매장 운영에 유리하지만, 무리한 확장이나 빚은 조심하세요.",C:"정리·관리 능력이 강점입니다. 장부와 재고 관리는 가게를 오래 유지하는 데 가장 중요한 일 중 하나입니다."};
+/* 지금까지 고른 답으로 만드는 조언 */
+function bizTips(){
+  const t=[], ht=holDone()?holTop():[];
+  ht.slice(0,2).forEach(x=>t.push(`<b>${HOL[x].n}</b>: ${BIZ_HOL[x]}`));
+  if(!ht.length&&bizSt()==="idea") t.push("어떤 업종이 맞을지 모르겠다면 흥미 탐색을 해 보거나, 고용24 직업정보에서 관심 있는 일을 찾아보세요.");
+  if(S.worries.includes("w1")) t.push("빨리 돈을 벌어야 한다면 창업보다 취업이 먼저입니다. 창업 뒤 처음 몇 달은 수입이 없거나 적을 수 있습니다.");
+  if(S.worries.includes("w4")) t.push("가족을 부양해야 한다면 일을 그만두고 바로 차리기보다, 주말 장사나 온라인 판매처럼 작게 시험해 본 뒤 넓히세요.");
+  if(S.worries.includes("w3")||S.worries.includes("w2")) t.push("자격증과 기술은 손님에게 믿음을 주는 간판이 되고, 법무보호복지공단 창업 지원을 받을 때도 중요하게 봅니다.");
+  if(lowEdu()) t.push("창업 교육과 창업 지원은 학력 제한이 없습니다. 장부 쓰기와 계산은 교육에서 함께 배울 수 있습니다.");
+  if(limOn()) t.push("희망 직업에 취업 제한 가능성이 있으면, 그 업종의 영업 신고·허가에도 제한이 있는지 꼭 함께 확인하세요.");
+  if(S.region) t.push(`${S.region} 지역 소상공인지원센터에서 창업 상담을 받을 수 있습니다. 가까운 센터는 1357로 물어보세요.`);
+  return t.slice(0,5);
+}
+
 /* 업종별 신고·허가: [업종 이름, 안내]. 희망 직업 키(JOBS·JOB_MORE)로 찾고, 없으면 BIZ_GEN */
 const BIZ_FOOD="처음 영업하기 전에 식품위생교육을 받고 건강진단결과서(보건증)를 받은 뒤 시·군·구청에 영업신고를 합니다.";
 const BIZ_BUILD="작은 수리·시공은 사업자등록으로 시작할 수 있지만, 일정 금액 이상의 공사를 맡으려면 건설업 등록(자본금·기술자 기준)이 필요합니다(확인 필요).";
@@ -1156,13 +1199,11 @@ function bizSec(){
   const ind=bizInd(), jn=bizJob(), ul=a=>`<ol>${a.map(x=>`<li>${x}</li>`).join("")}</ol>`;
   let h=`<div class="r-sec"><h3>창업 준비 안내${ind?` : ${ind[0]}`:""}</h3>`;
   if(youth()) h+=`<div class="warnbox"><b>만 19세 미만.</b> 미성년자는 사업자등록이나 가게 임대 계약을 할 때 보호자(법정대리인)의 동의가 필요합니다(확인 필요). 지금은 기술과 일 경험을 먼저 쌓고, 성인이 된 뒤 아래 순서로 창업을 준비하세요.</div>`;
-  h+=`<p>창업은 내 일을 스스로 꾸릴 수 있는 좋은 목표입니다. 다만 경험 없이 빚을 내어 시작하면 실패할 위험이 큽니다. ${jn?`먼저 ${jn} 일을 하며 기술과 손님을 대하는 경험을 쌓고, `:"하고 싶은 업종의 가게에서 먼저 일해 보며 경험을 쌓고, "}작게 시작하는 것이 안전합니다.</p>`;
-  h+=`<h4>준비 순서</h4>`+ul([
-    `기술·경험 쌓기: ${jn?`${jn} 관련 자격과 기술을 준비하고, `:""}같은 업종에서 적어도 1~2년 일해 보기`,
-    "창업 교육 듣기: 소상공인 창업 교육·상담으로 가게 자리, 비용, 세금, 손님 모으는 법 배우기",
-    "사업 계획 세우기: 처음 드는 돈(보증금·장비·재료)과 한 달 고정비, 한 달에 팔아야 할 양을 적어 보기",
-    "지원 신청: 한국법무보호복지공단 창업 지원 등 조건에 맞는 지원을 상담 후 신청하기",
-    "신고하고 시작하기: 사업자등록과 업종별 영업신고를 마치고 작은 규모로 시작하기"]);
+  const st=BIZ_ST.find(x=>x[0]===bizSt()), tm=bizTime(), tp=bizTips();
+  h+=`<p><b>지금 단계: ${st[3]}</b> (${st[1]}). ${{idea:"먼저 어떤 가게를 할지 정하는 것부터 시작합니다.",field:"업종은 정했으니 이제 그 일을 직접 배우고 해 보는 경험이 필요합니다.",exp:"일해 본 경험이 큰 밑천입니다. 이제 숫자로 계획을 세울 차례입니다.",own:"운영 경험은 큰 자산입니다. 지난 경험을 돌아보고 더 단단하게 다시 시작하세요."}[st[0]]} ${jn?`희망 직업 '${jn}'에 이어지는 창업을 기준으로 안내합니다.`:""}</p>`;
+  if(tm) h+=`<h4>나의 창업 시간표 (출소 예정: ${S.release})</h4><p>${tm}</p>`;
+  h+=`<h4>준비 순서</h4><ol>${bizSteps().map(x=>`<li><b>${x[0]}</b>: ${x[1]}</li>`).join("")}</ol>`;
+  if(tp.length) h+=`<h4>나에게 맞춘 조언</h4><ul>${tp.map(x=>`<li>${x}</li>`).join("")}</ul>`;
   h+=`<h4>필요한 신고·허가${ind?` (${ind[0]})`:""}</h4><p>${ind?ind[1]+" 사업자등록은 세무서(홈택스)에서 합니다.":BIZ_GEN}</p>`;
   h+=`<h4>도움받을 수 있는 곳</h4><table class="info">${BIZ_HELP.map(x=>`<tr><th>${x[0]}</th><td>${x[1]}</td></tr>`).join("")}</table>`;
   h+=`<h4>확인할 점</h4><ul><li>학원·PC방·체육도장처럼 아이·청소년이 이용하는 시설이나 일부 허가 업종은 범죄경력에 따라 운영이 제한될 수 있습니다. 업종을 정하면 시·군·구청과 상담 직원에게 확인하세요.</li><li>내지 않은 벌금이나 빚이 있으면 대출·지원을 받기 어려울 수 있습니다. 출소 전에 정리 계획을 세우세요.</li><li>'쉽게 큰돈을 번다'는 투자·가맹점 권유나 명의를 빌려 달라는 부탁은 거절하세요. 남의 사업에 이름을 빌려주면 빚과 법적 책임을 떠안을 수 있습니다.</li></ul>`;
